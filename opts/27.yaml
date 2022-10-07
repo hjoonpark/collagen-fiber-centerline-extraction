@@ -1,0 +1,20 @@
+img_dir: data/0929_dataset/
+val_ratio: 0.05
+batch_size: 32
+max_dataset_size: -1
+n_epochs: 99999
+shuffle: 1
+print_freq: 10
+val_freq: 100
+chkpt_freq: 100
+starting_epoch: 0
+normalize_type: tanh
+model:
+  lr: 1.0e-05
+  lr_policy: step
+  lr_decay_period: -1
+  lr_decay_ratio: 0.2
+  lambda_recon: 10
+  D_update_interval: 1
+  img_size: 256
+  n_channels: 1

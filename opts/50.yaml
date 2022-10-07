@@ -1,0 +1,14 @@
+img_dir: data/0929_dataset/
+batch_size: 32
+n_epochs: 2000
+print_freq: 10
+val_freq: 100
+chkpt_freq: 100
+starting_epoch: 0
+data_resample_factor: 1
+
+model:
+    lr: 0.0001
+    img_size: 256
+    n_channels: 1
+    loss_type: 'focal'

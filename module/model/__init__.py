@@ -1,0 +1,24 @@
+from .base_model import *
+# from .pix2pix_model import Pix2PixModel
+# from .pix2pix_gen import Pix2PixGen
+# from .bvae_gan import bVaeGan
+# from .vae import bVae
+# from .pixelvae import PixelVAE
+# from .vae_next import VaeNext
+# from .cycle_gan import CycleGAN
+# from .cycler import Cycler
+# from .cycle_vae_gan import CycleVaeGan
+# from .munit import *
+# from .munit_oneway import MUNIT_Oneway
+# from .munit_vae import MUNIT_VAE
+# from ._9_cycle_vae_gan import _9_CycleVaeGan
+# from ._11_VaeDiscoGan import _11_VaeDiscoGan
+# from ._10_vae import VAE
+# from ._10b_vae_with_feats import VAE_Feats
+# from ._12_VaeDiscoCGan import _12_VaeDiscoCGan
+# from ._13_CycleVaeGan import _13_CycleVaeGan
+# from ._16_CycleVaeGan import _16_CycleVaeGan
+# from ._14_MoreVaeDiscoGan import _14_MoreVaeDiscoGan
+# from ._14b_MoreVaeDiscoGan import _14b_MoreVaeDiscoGan
+# from ._15_VaeDiscoGan_MultiZ import _15_VaeDiscoGan_MultiZ
+# from ._17_DiscoGanRevisited import _17_DiscoGanRevisited
