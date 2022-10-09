@@ -9,7 +9,8 @@ class _pix2pix(BaseModel):
         BaseModel.__init__(self, opt)
         self.opt = opt
 
-        self.netG = self.to_device(UnetGenerator(input_nc=1, output_nc=1, num_downs=2, ngf=32, norm_layer=nn.BatchNorm2d, use_dropout=is_train))
+        self.netG = self.to_device(UnetGenerator(input_nc=1, output_nc=1, num_downs=6, ngf=8, norm_layer=nn.BatchNorm2d, use_dropout=is_train))
+        self.netG.load_state_dict(torch.load('output/27-bce/model/init/netG.pt'))
 
         if is_train:
             self.netD = self.define_D()
@@ -17,14 +18,14 @@ class _pix2pix(BaseModel):
             self.lambda_recon = opt['lambda_recon']
             self.D_update_interval = opt['D_update_interval']
             self.criterionGAN = nn.MSELoss()
-            self.criterionPixel = nn.BCELoss()
+            self.criterionPixel = nn.L1Loss()
 
             G_params = self.netG.parameters()
             D_params = self.netD.parameters()
 
             lr = opt['lr']
-            self.optimizer_G = torch.optim.Adam(G_params, lr=lr)
-            self.optimizer_D = torch.optim.Adam(D_params, lr=lr)
+            self.optimizer_G = torch.optim.Adam(G_params, lr=lr, amsgrad=True)
+            self.optimizer_D = torch.optim.Adam(D_params, lr=lr, amsgrad=True)
 
             self.register_buffer('real_label', torch.tensor(1.0))
             self.register_buffer('fake_label', torch.tensor(0.0))
@@ -70,7 +71,7 @@ class _pix2pix(BaseModel):
         self.loss_D = (loss_D_real + loss_D_fake) * 0.5
         self.loss_D.backward()
     
-    def backward_G(self):
+    def backward_G(self, iters):
         fake_AB = torch.cat((self.real_L, self.fake_I), 1)
         pred_fake = self.netD(fake_AB)
         is_real = self.real_label.expand_as(pred_fake).to(self.device)
@@ -78,14 +79,17 @@ class _pix2pix(BaseModel):
 
         self.loss_recon = self.criterionPixel(self.fake_I, self.real_I)
 
-        self.loss_G = self.lambda_recon*self.loss_recon + self.loss_GAN
+        if iters > self.opt['warm_up']:
+            self.loss_G = self.lambda_recon*self.loss_recon + self.loss_GAN
+        else:
+            self.loss_G = self.lambda_recon*self.loss_recon
         self.loss_G.backward()
 
     def optimize_parameters(self, iters):
         self.fake_I = self.forward(self.real_L)
 
         # update D
-        if iters % self.D_update_interval == 0:
+        if (iters % self.D_update_interval== 0) and iters>self.opt['warm_up']:
             self.set_requires_grad(self.netD, True)
             self.optimizer_D.zero_grad()
             self.backward_D()
@@ -94,7 +98,7 @@ class _pix2pix(BaseModel):
         # update G
         self.set_requires_grad(self.netD, False)
         self.optimizer_G.zero_grad()
-        self.backward_G()
+        self.backward_G(iters)
         self.optimizer_G.step()
 
     def define_D(self):
@@ -102,18 +106,26 @@ class _pix2pix(BaseModel):
         'PatchGAN' classifier described in the original pix2pix paper.
         """
         seq = [
-            nn.Conv2d(2, 32, kernel_size=4, stride=2, padding=1, bias=True), # 128
+            nn.Conv2d(2, 8, kernel_size=4, stride=2, padding=1, bias=True), # 128
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1, bias=False), # 64
-            nn.BatchNorm2d(64),
+            nn.Conv2d(8, 16, kernel_size=4, stride=2, padding=1, bias=False), # 64
+            # nn.BatchNorm2d(32),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1, bias=False), # 32
-            nn.BatchNorm2d(128),
+            nn.Conv2d(16, 32, kernel_size=4, stride=2, padding=1, bias=False), # 32
+            # nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(128, 256, kernel_size=4, stride=1, padding=1, bias=False), # 16
-            nn.BatchNorm2d(256),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1, bias=False), # 16
+            # nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(256, 1, kernel_size=4, stride=1, padding=1, bias=True)
+            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1, bias=False), # 8
+            # nn.BatchNorm2d(256),
+            nn.LeakyReLU(0.2, inplace=True),
+            # nn.AdaptiveAvgPool2d((4, 4)),
+            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1, bias=False), # 4
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(256, 256, kernel_size=4, stride=2, padding=1, bias=False), # 2
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(256, 1, kernel_size=3, stride=1, padding=1, bias=True)
         ]
         return self.to_device(nn.Sequential(*seq))
 
@@ -182,8 +194,15 @@ class UnetSkipConnectionBlock(nn.Module):
         upnorm = norm_layer(outer_nc)
 
         if outermost:
-            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc, kernel_size=4, stride=2, padding=1)
+            # upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc, kernel_size=4, stride=2, padding=1)
             down = [downconv]
+            upconv = nn.Sequential(
+                nn.Conv2d(inner_nc * 2, inner_nc * 2, kernel_size=1),
+                nn.PReLU(),
+                nn.UpsamplingBilinear2d(scale_factor=2), 
+                nn.Conv2d(inner_nc * 2, outer_nc, kernel_size=3, stride=1, padding=1)
+                )
+            # up = [uprelu, upconv]
             up = [uprelu, upconv, nn.Sigmoid()]
             model = down + [submodule] + up
         elif innermost:

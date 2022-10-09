@@ -6,6 +6,7 @@ import glob
 from skimage.morphology import skeletonize
 from skimage import img_as_float, io, img_as_bool
 import random
+import skimage
 
 class RandomCollagen(torch.utils.data.Dataset):
     def __init__(self, opt, logger):

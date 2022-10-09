@@ -140,6 +140,9 @@ if __name__ == "__main__":
                 fI = as_np(model.fake_I)[0:N]
                 index = model.index[0:N]
                 imgs_for_plot = {"index": index, "real_L": rL, "real_I": rI, "fake_I": fI}
+                
+            batch_idx += 1
+            if batch_idx > opt['iter_per_epoch']: break
 
             iters += 1
             if iters > 1e5:

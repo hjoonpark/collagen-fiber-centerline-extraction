@@ -148,7 +148,7 @@ if __name__ == "__main__":
                 imgs_for_plot = {"index": index, "real_I": rI, "real_L": rL, "fake_L": fL}
 
             batch_idx += 1
-            if batch_idx > 20: break
+            if batch_idx > opt['iter_per_epoch']: break
 
         # batch iteration ends
         for k, v in loss_curr.items():
