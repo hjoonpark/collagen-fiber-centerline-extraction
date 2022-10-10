@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import functools
 from .base_model import BaseModel, as_np
+from .vgg_perceptual import VGGPerceptualLoss
 
 class _pix2pix(BaseModel):
     def __init__(self, opt, is_train=True):
@@ -10,15 +11,17 @@ class _pix2pix(BaseModel):
         self.opt = opt
 
         self.netG = self.to_device(UnetGenerator(input_nc=1, output_nc=1, num_downs=6, ngf=8, norm_layer=nn.BatchNorm2d, use_dropout=is_train))
-        self.netG.load_state_dict(torch.load('output/27-bce/model/init/netG.pt'))
+        self.netG.load_state_dict(torch.load('output/27-percep/model/05800/netG.pt'))
 
         if is_train:
             self.netD = self.define_D()
+            self.netD.load_state_dict(torch.load('output/27-percep/model/05800/netD.pt'))
 
             self.lambda_recon = opt['lambda_recon']
             self.D_update_interval = opt['D_update_interval']
             self.criterionGAN = nn.MSELoss()
             self.criterionPixel = nn.L1Loss()
+            self.criterionPerceptual = VGGPerceptualLoss().cuda()
 
             G_params = self.netG.parameters()
             D_params = self.netD.parameters()
@@ -36,7 +39,7 @@ class _pix2pix(BaseModel):
 
         self.loss_G = 0
         self.loss_D = 0
-        self.loss_names = ['recon', 'GAN', 'D']
+        self.loss_names = ['recon', 'percep', 'GAN', 'D']
 
     def get_results(self):
         real_L = as_np(self.real_L)
@@ -78,11 +81,12 @@ class _pix2pix(BaseModel):
         self.loss_GAN = self.criterionGAN(pred_fake, is_real)
 
         self.loss_recon = self.criterionPixel(self.fake_I, self.real_I)
+        self.loss_percep = self.criterionPerceptual(self.fake_I, self.real_I)
 
         if iters > self.opt['warm_up']:
-            self.loss_G = self.lambda_recon*self.loss_recon + self.loss_GAN
+            self.loss_G = self.lambda_recon*self.loss_recon + self.loss_percep + 5*self.loss_GAN
         else:
-            self.loss_G = self.lambda_recon*self.loss_recon
+            self.loss_G = self.lambda_recon*self.loss_recon + self.loss_percep
         self.loss_G.backward()
 
     def optimize_parameters(self, iters):
