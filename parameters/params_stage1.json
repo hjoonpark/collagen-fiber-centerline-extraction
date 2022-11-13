@@ -1,0 +1,22 @@
+{
+    "data_dir": "data/36k",
+    "train": {
+        "n_epoch": 10000000,
+        "batch_size": 800,
+        "lr": 0.0002,
+        "log_freq": 2,
+        "save_freq": 50
+    },
+    "duovae": {
+        "z_dim": 6,
+        "w_dim": 6,
+        "x_recon_weight": 2.0,
+        "y_recon_weight": 1.0,
+        "beta_z": 0.005,
+        "beta_w": 0.005,
+        "beta_w2": 0.005,
+        "hid_channel": 32,
+        "hid_dim_x": 128,
+        "hid_dim_y": 12
+    }
+}
