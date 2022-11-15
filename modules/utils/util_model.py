@@ -17,7 +17,7 @@ class View(nn.Module):
 
 def get_available_devices(logger):
     """
-    loads whichever available GPUs/CPU
+    - loads whichever available GPU/CPU (single worker).
     """
     gpu_ids = []
     device = "cpu"
@@ -83,7 +83,7 @@ def load_model(model, load_dir, logger):
             logger.print("loading model: {}".format(load_path))
             state_dict = torch.load(load_path, map_location=str(model.device))
             net.load_state_dict(state_dict)
-            logger.print("[INFO] model={} loaded succesfully!".format(model_name))
+            logger.print("  model={} loaded succesfully!".format(model_name))
         except:
             logger.print("failed to load - architecture mismatch! Initializing new instead: {}".format(model_name), LogLevel.WARNING.name)
 

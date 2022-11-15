@@ -1,5 +1,5 @@
-2022-11-13 03:29:01 INFO PyTorch implementation of "Variational auto-encoder for collagen fiber centerline generation and extraction in fibrotic cancer tissues"
-2022-11-13 03:29:01 INFO =============== Training Stage 1 ===============
+2022-11-15 03:56:21 INFO PyTorch implementation of "Variational auto-encoder for collagen fiber centerline generation and extraction in fibrotic cancer tissues"
+2022-11-15 03:56:21 INFO =============== Training Stage 1 ===============
 Loaded [2/36223]
 Loaded [1002/36223]
 Loaded [2002/36223]
@@ -37,119 +37,258 @@ Loaded [33002/36223]
 Loaded [34002/36223]
 Loaded [35002/36223]
 Loaded [36002/36223]
-2022-11-13 03:29:20 INFO Loaded centerlines=torch.Size([36223, 1, 256, 256]), torch.float32 min/max=(0.00, 1.00), mean/std=(0.02, 0.15)
-2022-11-13 03:29:20 INFO Loaded properties=torch.Size([36223, 6]), torch.float32 min/max=(-4.72, 8.31), mean/std=(0.00, 1.00)
-2022-11-13 03:29:20 INFO CUDA is available
-2022-11-13 03:29:21 INFO DuoVAE(
+2022-11-15 03:56:39 INFO Loaded centerlines=torch.Size([36223, 1, 256, 256]), torch.float32 min/max=(0.00, 1.00), mean/std=(0.02, 0.15)
+2022-11-15 03:56:39 INFO Loaded properties=torch.Size([36223, 6]), torch.float32 min/max=(-4.72, 8.31), mean/std=(0.00, 1.00)
+2022-11-15 03:56:39 INFO CUDA is available
+2022-11-15 03:56:40 INFO DuoVAE(
   (encoder_x): EncoderX(
     (encoder): Sequential(
-      (0): Conv2d(1, 32, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
-      (1): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (2): LeakyReLU(negative_slope=0.2, inplace=True)
-      (3): Conv2d(32, 32, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
-      (4): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (5): LeakyReLU(negative_slope=0.2, inplace=True)
-      (6): Conv2d(32, 32, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
-      (7): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (8): LeakyReLU(negative_slope=0.2, inplace=True)
-      (9): Conv2d(32, 32, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
-      (10): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (11): LeakyReLU(negative_slope=0.2, inplace=True)
-      (12): View()
-      (13): Linear(in_features=8192, out_features=128, bias=True)
-      (14): LeakyReLU(negative_slope=0.2, inplace=True)
-      (15): Linear(in_features=128, out_features=128, bias=True)
-      (16): LeakyReLU(negative_slope=0.2, inplace=True)
-      (17): Linear(in_features=128, out_features=24, bias=True)
+      (0): ResidualConv(
+        (net): Sequential(
+          (0): Conv2d(1, 8, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (1): BatchNorm2d(8, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): LeakyReLU(negative_slope=0.2, inplace=True)
+          (3): BatchNorm2d(8, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (rnet): Sequential(
+          (0): Conv2d(1, 8, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (1): BatchNorm2d(8, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (lrelu): LeakyReLU(negative_slope=0.2, inplace=True)
+      )
+      (1): ResidualConv(
+        (net): Sequential(
+          (0): Conv2d(8, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (1): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): LeakyReLU(negative_slope=0.2, inplace=True)
+          (3): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (rnet): Sequential(
+          (0): Conv2d(8, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (1): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (lrelu): LeakyReLU(negative_slope=0.2, inplace=True)
+      )
+      (2): ResidualConv(
+        (net): Sequential(
+          (0): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (1): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): LeakyReLU(negative_slope=0.2, inplace=True)
+          (3): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (rnet): Sequential(
+          (0): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (1): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (lrelu): LeakyReLU(negative_slope=0.2, inplace=True)
+      )
+      (3): ResidualConv(
+        (net): Sequential(
+          (0): Conv2d(32, 64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): LeakyReLU(negative_slope=0.2, inplace=True)
+          (3): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (rnet): Sequential(
+          (0): Conv2d(32, 64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (lrelu): LeakyReLU(negative_slope=0.2, inplace=True)
+      )
+      (4): View()
+      (5): ResidualLinear(
+        (fc): Sequential(
+          (0): Linear(in_features=16384, out_features=1024, bias=True)
+          (1): LeakyReLU(negative_slope=0.2, inplace=True)
+        )
+        (rfc): Sequential(
+          (0): Linear(in_features=16384, out_features=1024, bias=True)
+        )
+        (lrelu): LeakyReLU(negative_slope=0.2, inplace=True)
+      )
+      (6): ResidualLinear(
+        (fc): Sequential(
+          (0): Linear(in_features=1024, out_features=24, bias=True)
+          (1): LeakyReLU(negative_slope=0.2, inplace=True)
+        )
+        (rfc): Sequential(
+          (0): Linear(in_features=1024, out_features=24, bias=True)
+        )
+        (lrelu): LeakyReLU(negative_slope=0.2, inplace=True)
+      )
     )
   )
   (decoder_x): DecoderX(
     (decoder): Sequential(
-      (0): Linear(in_features=12, out_features=128, bias=True)
-      (1): LeakyReLU(negative_slope=0.2, inplace=True)
-      (2): Linear(in_features=128, out_features=128, bias=True)
-      (3): LeakyReLU(negative_slope=0.2, inplace=True)
-      (4): Linear(in_features=128, out_features=8192, bias=True)
-      (5): LeakyReLU(negative_slope=0.2, inplace=True)
-      (6): View()
-      (7): ConvTranspose2d(32, 32, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
-      (8): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (9): LeakyReLU(negative_slope=0.2, inplace=True)
-      (10): ConvTranspose2d(32, 32, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
-      (11): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (12): LeakyReLU(negative_slope=0.2, inplace=True)
-      (13): ConvTranspose2d(32, 32, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
-      (14): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (15): LeakyReLU(negative_slope=0.2, inplace=True)
-      (16): ConvTranspose2d(32, 32, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
-      (17): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (18): LeakyReLU(negative_slope=0.2, inplace=True)
-      (19): ConvTranspose2d(32, 1, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (0): ResidualLinear(
+        (fc): Sequential(
+          (0): Linear(in_features=12, out_features=1024, bias=True)
+          (1): LeakyReLU(negative_slope=0.2, inplace=True)
+        )
+        (rfc): Sequential(
+          (0): Linear(in_features=12, out_features=1024, bias=True)
+        )
+        (lrelu): LeakyReLU(negative_slope=0.2, inplace=True)
+      )
+      (1): ResidualLinear(
+        (fc): Sequential(
+          (0): Linear(in_features=1024, out_features=16384, bias=True)
+          (1): LeakyReLU(negative_slope=0.2, inplace=True)
+        )
+        (rfc): Sequential(
+          (0): Linear(in_features=1024, out_features=16384, bias=True)
+        )
+        (lrelu): LeakyReLU(negative_slope=0.2, inplace=True)
+      )
+      (2): View()
+      (3): ResidualConv(
+        (net): Sequential(
+          (0): ConvTranspose2d(64, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), output_padding=(1, 1), bias=False)
+          (1): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): LeakyReLU(negative_slope=0.2, inplace=True)
+          (3): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (rnet): Sequential(
+          (0): ConvTranspose2d(64, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), output_padding=(1, 1), bias=False)
+          (1): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (lrelu): LeakyReLU(negative_slope=0.2, inplace=True)
+      )
+      (4): ResidualConv(
+        (net): Sequential(
+          (0): ConvTranspose2d(32, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), output_padding=(1, 1), bias=False)
+          (1): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): LeakyReLU(negative_slope=0.2, inplace=True)
+          (3): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (rnet): Sequential(
+          (0): ConvTranspose2d(32, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), output_padding=(1, 1), bias=False)
+          (1): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (lrelu): LeakyReLU(negative_slope=0.2, inplace=True)
+      )
+      (5): ResidualConv(
+        (net): Sequential(
+          (0): ConvTranspose2d(16, 8, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), output_padding=(1, 1), bias=False)
+          (1): BatchNorm2d(8, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): LeakyReLU(negative_slope=0.2, inplace=True)
+          (3): BatchNorm2d(8, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (rnet): Sequential(
+          (0): ConvTranspose2d(16, 8, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), output_padding=(1, 1), bias=False)
+          (1): BatchNorm2d(8, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (lrelu): LeakyReLU(negative_slope=0.2, inplace=True)
+      )
+      (6): ResidualConv(
+        (net): Sequential(
+          (0): ConvTranspose2d(8, 4, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), output_padding=(1, 1), bias=False)
+          (1): BatchNorm2d(4, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): LeakyReLU(negative_slope=0.2, inplace=True)
+          (3): BatchNorm2d(4, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (rnet): Sequential(
+          (0): ConvTranspose2d(8, 4, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), output_padding=(1, 1), bias=False)
+          (1): BatchNorm2d(4, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (lrelu): LeakyReLU(negative_slope=0.2, inplace=True)
+      )
+      (7): Conv2d(4, 1, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
     )
   )
   (encoder_y): EncoderY(
     (encoder): Sequential(
-      (0): Linear(in_features=6, out_features=12, bias=True)
-      (1): LeakyReLU(negative_slope=0.2, inplace=True)
-      (2): Linear(in_features=12, out_features=12, bias=True)
-      (3): LeakyReLU(negative_slope=0.2, inplace=True)
-      (4): Linear(in_features=12, out_features=12, bias=True)
+      (0): Linear(in_features=6, out_features=256, bias=True)
+      (1): ReLU(inplace=True)
+      (2): Linear(in_features=256, out_features=256, bias=True)
+      (3): ReLU(inplace=True)
+      (4): Linear(in_features=256, out_features=12, bias=True)
     )
   )
   (decoder_y): DecoderY(
     (decoder): Sequential(
-      (0): Linear(in_features=6, out_features=12, bias=True)
-      (1): LeakyReLU(negative_slope=0.2, inplace=True)
-      (2): Linear(in_features=12, out_features=12, bias=True)
-      (3): LeakyReLU(negative_slope=0.2, inplace=True)
-      (4): Linear(in_features=12, out_features=6, bias=True)
+      (0): Linear(in_features=6, out_features=256, bias=True)
+      (1): ReLU(inplace=True)
+      (2): Linear(in_features=256, out_features=256, bias=True)
+      (3): ReLU(inplace=True)
+      (4): Linear(in_features=256, out_features=6, bias=True)
     )
   )
+  (criteriaBCEWithLogits): BCEWithLogitsLoss()
 )
-2022-11-13 03:29:21 INFO parameters={
+2022-11-15 03:56:40 INFO parameters={
     "data_dir": "data/36k",
     "train": {
         "n_epoch": 10000000,
-        "batch_size": 800,
-        "lr": 0.0002,
-        "log_freq": 2,
+        "batch_size": 2700,
+        "lr": 0.0001,
+        "log_freq": 1,
         "save_freq": 50
     },
     "duovae": {
         "z_dim": 6,
         "w_dim": 6,
-        "x_recon_weight": 2.0,
+        "x_recon_weight": 5.0,
         "y_recon_weight": 1.0,
-        "beta_z": 0.005,
-        "beta_w": 0.005,
+        "beta_z": 0.001,
+        "beta_w": 0.001,
         "beta_w2": 0.005,
-        "hid_channel": 32,
-        "hid_dim_x": 128,
-        "hid_dim_y": 12
+        "hid_channel": 64,
+        "hid_dim_x": 1024,
+        "hid_dim_y": 256
     }
 }
-2022-11-13 03:29:21 INFO Trainable parameters=2,260,227
-2022-11-13 03:29:21 INFO Device=cuda:0, GPU Ids=[0]
-2022-11-13 03:29:21 INFO Training on 36,223 number of data
-2022-11-13 03:29:56 INFO   [0] NVIDIA RTX A6000, Memory: total(49.1 GB) used(45.3 GB) free(3.4 GB) 92% | temperature(71 'C)
-2022-11-13 03:30:29 INFO epoch:2/10000000 x_recon:24.6093 y_recon:42.4506 y_recon2:285.0869 kl_div_z:0.2876 kl_div_w:1.6710 kl_div_w2:0.0408 
-2022-11-13 03:31:36 INFO epoch:4/10000000 x_recon:13.6672 y_recon:38.4877 y_recon2:276.3016 kl_div_z:0.0245 kl_div_w:1.6546 kl_div_w2:0.0474 
-2022-11-13 03:32:43 INFO epoch:6/10000000 x_recon:11.3600 y_recon:30.9363 y_recon2:255.1907 kl_div_z:0.0142 kl_div_w:1.4553 kl_div_w2:0.0918 
-2022-11-13 03:33:50 INFO epoch:8/10000000 x_recon:10.3963 y_recon:25.7836 y_recon2:202.7319 kl_div_z:0.0155 kl_div_w:1.2642 kl_div_w2:0.3125 
-2022-11-13 03:34:57 INFO epoch:10/10000000 x_recon:9.9626 y_recon:23.6681 y_recon2:169.3109 kl_div_z:0.0138 kl_div_w:1.2988 kl_div_w2:0.6572 
-2022-11-13 03:34:57 INFO   [0] NVIDIA RTX A6000, Memory: total(49.1 GB) used(45.3 GB) free(3.4 GB) 92% | temperature(76 'C)
-2022-11-13 03:34:58 INFO   train losses saved: output/stage1/log/losses.json, output/stage1/log/losses.png
-2022-11-13 03:34:58 INFO   model saved: output/stage1/model
-2022-11-13 03:34:58 INFO   y-traverse saved: output/stage1/visualization/y_trav_00010.png
-2022-11-13 03:36:05 INFO epoch:12/10000000 x_recon:9.7610 y_recon:22.3163 y_recon2:150.4930 kl_div_z:0.0121 kl_div_w:1.1914 kl_div_w2:0.9481 
-2022-11-13 03:37:12 INFO epoch:14/10000000 x_recon:9.6740 y_recon:21.4464 y_recon2:137.5137 kl_div_z:0.0110 kl_div_w:1.1180 kl_div_w2:1.2237 
-2022-11-13 03:38:19 INFO epoch:16/10000000 x_recon:9.6402 y_recon:20.8012 y_recon2:127.9122 kl_div_z:0.0107 kl_div_w:1.1326 kl_div_w2:1.4754 
-2022-11-13 03:39:26 INFO epoch:18/10000000 x_recon:9.6232 y_recon:19.8709 y_recon2:121.0060 kl_div_z:0.0110 kl_div_w:1.2050 kl_div_w2:1.7077 
-2022-11-13 03:40:33 INFO epoch:20/10000000 x_recon:9.5951 y_recon:19.1480 y_recon2:113.2498 kl_div_z:0.0111 kl_div_w:1.5333 kl_div_w2:1.9307 
-2022-11-13 03:40:33 INFO   [0] NVIDIA RTX A6000, Memory: total(49.1 GB) used(45.3 GB) free(3.4 GB) 92% | temperature(75 'C)
-2022-11-13 03:40:34 INFO   train losses saved: output/stage1/log/losses.json, output/stage1/log/losses.png
-2022-11-13 03:40:34 INFO   model saved: output/stage1/model
-2022-11-13 03:40:34 INFO   y-traverse saved: output/stage1/visualization/y_trav_00020.png
-2022-11-13 03:41:41 INFO epoch:22/10000000 x_recon:9.5802 y_recon:17.4466 y_recon2:105.9449 kl_div_z:0.0115 kl_div_w:1.7651 kl_div_w2:2.1722 
-2022-11-13 03:42:48 INFO epoch:24/10000000 x_recon:9.5773 y_recon:16.2114 y_recon2:98.1662 kl_div_z:0.0109 kl_div_w:2.0614 kl_div_w2:2.4328 
-2022-11-13 03:43:55 INFO epoch:26/10000000 x_recon:9.5747 y_recon:15.1963 y_recon2:89.4765 kl_div_z:0.0105 kl_div_w:2.4768 kl_div_w2:2.7080 
+2022-11-15 03:56:40 INFO Trainable parameters=67,457,903
+2022-11-15 03:56:40 INFO Device=cuda:0, GPU Ids=[0]
+2022-11-15 03:56:40 INFO Training on 36,223 number of data
+2022-11-15 03:57:16 INFO   [0] NVIDIA RTX A6000, Memory: total(49.1 GB) used(47.9 GB) free(0.7 GB) 98% | temperature(70 'C)
+2022-11-15 03:57:16 INFO epoch:1/10000000 x_recon:13.2076 y_recon:14.5804 y_recon2:83.8422 kl_div_z:2680891.4971 kl_div_w:314.9408 kl_div_w2:1.1106 
+2022-11-15 03:57:51 INFO epoch:2/10000000 x_recon:13.1116 y_recon:13.6137 y_recon2:80.8315 kl_div_z:117.7016 kl_div_w:284.6959 kl_div_w2:2.6578 
+2022-11-15 03:58:25 INFO epoch:3/10000000 x_recon:12.7151 y_recon:13.2652 y_recon2:73.8044 kl_div_z:67.6502 kl_div_w:391.4424 kl_div_w2:6.8198 
+2022-11-15 03:59:00 INFO epoch:4/10000000 x_recon:12.5421 y_recon:12.9801 y_recon2:60.9356 kl_div_z:67.2397 kl_div_w:341.7976 kl_div_w2:15.9049 
+2022-11-15 03:59:35 INFO epoch:5/10000000 x_recon:12.4258 y_recon:12.7941 y_recon2:47.5327 kl_div_z:64.0679 kl_div_w:280.6226 kl_div_w2:32.6969 
+2022-11-15 04:00:09 INFO epoch:6/10000000 x_recon:12.3514 y_recon:12.4514 y_recon2:38.5733 kl_div_z:60.0008 kl_div_w:313.5592 kl_div_w2:52.8021 
+2022-11-15 04:00:44 INFO epoch:7/10000000 x_recon:12.3001 y_recon:12.2635 y_recon2:31.2651 kl_div_z:56.7859 kl_div_w:402.8700 kl_div_w2:71.1439 
+2022-11-15 04:01:18 INFO epoch:8/10000000 x_recon:12.2582 y_recon:12.0862 y_recon2:24.6790 kl_div_z:54.3341 kl_div_w:594.4532 kl_div_w2:89.4441 
+2022-11-15 04:01:53 INFO epoch:9/10000000 x_recon:12.2232 y_recon:11.9012 y_recon2:18.1399 kl_div_z:52.4884 kl_div_w:990.2793 kl_div_w2:107.2182 
+2022-11-15 04:02:27 INFO epoch:10/10000000 x_recon:12.1912 y_recon:11.8460 y_recon2:13.9851 kl_div_z:51.2104 kl_div_w:1968.7815 kl_div_w2:125.6617 
+2022-11-15 04:03:02 INFO epoch:11/10000000 x_recon:12.1563 y_recon:11.6501 y_recon2:11.9694 kl_div_z:50.4856 kl_div_w:3666.3658 kl_div_w2:140.7293 
+2022-11-15 04:03:36 INFO epoch:12/10000000 x_recon:12.1044 y_recon:11.5452 y_recon2:10.5230 kl_div_z:49.9954 kl_div_w:7074.0723 kl_div_w2:153.2166 
+2022-11-15 04:04:10 INFO epoch:13/10000000 x_recon:12.0258 y_recon:11.6667 y_recon2:9.3397 kl_div_z:49.7666 kl_div_w:13210.5930 kl_div_w2:165.5147 
+2022-11-15 04:04:44 INFO epoch:14/10000000 x_recon:11.8968 y_recon:11.6706 y_recon2:8.3936 kl_div_z:49.7839 kl_div_w:21787.8819 kl_div_w2:177.7340 
+2022-11-15 04:05:19 INFO epoch:15/10000000 x_recon:11.7456 y_recon:11.7982 y_recon2:7.5423 kl_div_z:49.7512 kl_div_w:35612.5081 kl_div_w2:191.8701 
+2022-11-15 04:05:53 INFO epoch:16/10000000 x_recon:11.5834 y_recon:11.9346 y_recon2:7.0265 kl_div_z:49.5022 kl_div_w:54342.7673 kl_div_w2:207.5737 
+2022-11-15 04:06:27 INFO epoch:17/10000000 x_recon:11.4100 y_recon:12.3403 y_recon2:6.8541 kl_div_z:49.6116 kl_div_w:91482.3074 kl_div_w2:227.0851 
+2022-11-15 04:07:02 INFO epoch:18/10000000 x_recon:11.2433 y_recon:12.4863 y_recon2:6.3985 kl_div_z:49.6860 kl_div_w:135028.6985 kl_div_w2:246.1109 
+2022-11-15 04:07:36 INFO epoch:19/10000000 x_recon:11.0891 y_recon:12.1547 y_recon2:6.0662 kl_div_z:49.6613 kl_div_w:262101.4155 kl_div_w2:274.6859 
+2022-11-15 04:08:10 INFO epoch:20/10000000 x_recon:10.9469 y_recon:12.4692 y_recon2:5.6751 kl_div_z:50.0270 kl_div_w:342718.5771 kl_div_w2:306.4605 
+2022-11-15 04:08:45 INFO epoch:21/10000000 x_recon:10.8252 y_recon:12.2548 y_recon2:4.8161 kl_div_z:49.8755 kl_div_w:440947.5898 kl_div_w2:341.3743 
+2022-11-15 04:09:19 INFO epoch:22/10000000 x_recon:10.7149 y_recon:13.0114 y_recon2:4.3785 kl_div_z:49.9670 kl_div_w:491523.6895 kl_div_w2:382.8793 
+2022-11-15 04:09:53 INFO epoch:23/10000000 x_recon:10.6070 y_recon:14.6309 y_recon2:4.3573 kl_div_z:49.7995 kl_div_w:821230.8965 kl_div_w2:421.8126 
+2022-11-15 04:10:27 INFO epoch:24/10000000 x_recon:10.4966 y_recon:16.7543 y_recon2:4.7011 kl_div_z:50.0386 kl_div_w:1049288.8379 kl_div_w2:466.5628 
+2022-11-15 04:11:02 INFO epoch:25/10000000 x_recon:10.3757 y_recon:16.3756 y_recon2:6.3253 kl_div_z:53.0686 kl_div_w:2920680.4062 kl_div_w2:500.9800 
+2022-11-15 04:11:36 INFO epoch:26/10000000 x_recon:10.2816 y_recon:13.3637 y_recon2:6.0203 kl_div_z:50.2985 kl_div_w:6655568.2148 kl_div_w2:508.9696 
+2022-11-15 04:12:10 INFO epoch:27/10000000 x_recon:10.1566 y_recon:14.9362 y_recon2:5.5203 kl_div_z:50.8887 kl_div_w:9489868.2930 kl_div_w2:482.5860 
+2022-11-15 04:12:44 INFO epoch:28/10000000 x_recon:10.0401 y_recon:14.5870 y_recon2:5.7346 kl_div_z:43.2550 kl_div_w:7492350.3750 kl_div_w2:486.3073 
+2022-11-15 04:13:19 INFO epoch:29/10000000 x_recon:9.9209 y_recon:13.4914 y_recon2:4.6563 kl_div_z:37.1200 kl_div_w:5621830.1602 kl_div_w2:503.2098 
+2022-11-15 04:13:53 INFO epoch:30/10000000 x_recon:9.7923 y_recon:14.0735 y_recon2:5.2532 kl_div_z:37.2982 kl_div_w:3276262.6055 kl_div_w2:509.4991 
+2022-11-15 04:14:27 INFO epoch:31/10000000 x_recon:9.6811 y_recon:16.0267 y_recon2:6.2000 kl_div_z:45.1307 kl_div_w:7727768.7109 kl_div_w2:548.5520 
+2022-11-15 04:15:01 INFO epoch:32/10000000 x_recon:9.5664 y_recon:17.6453 y_recon2:9.5191 kl_div_z:62.7024 kl_div_w:7822415.0234 kl_div_w2:562.5808 
+2022-11-15 04:15:36 INFO epoch:33/10000000 x_recon:9.4280 y_recon:15.5178 y_recon2:9.8839 kl_div_z:51.8661 kl_div_w:19171007.5078 kl_div_w2:603.8051 
+2022-11-15 04:16:10 INFO epoch:34/10000000 x_recon:9.2957 y_recon:15.4602 y_recon2:6.3068 kl_div_z:39.2357 kl_div_w:61525336.9688 kl_div_w2:618.3666 
+2022-11-15 04:16:44 INFO epoch:35/10000000 x_recon:9.1246 y_recon:18.2096 y_recon2:13.1167 kl_div_z:44.0508 kl_div_w:24858225.3125 kl_div_w2:595.9972 
+2022-11-15 04:17:18 INFO epoch:36/10000000 x_recon:8.9572 y_recon:17.8788 y_recon2:10.9625 kl_div_z:42.0439 kl_div_w:18685019.9141 kl_div_w2:645.7638 
+2022-11-15 04:17:52 INFO epoch:37/10000000 x_recon:8.8235 y_recon:19.2036 y_recon2:11.2421 kl_div_z:59.2905 kl_div_w:53941145.4531 kl_div_w2:692.6789 
+2022-11-15 04:18:27 INFO epoch:38/10000000 x_recon:8.7364 y_recon:22.2231 y_recon2:11.2922 kl_div_z:45.5440 kl_div_w:61264525.7969 kl_div_w2:720.9476 
+2022-11-15 04:19:01 INFO epoch:39/10000000 x_recon:8.6153 y_recon:17.4818 y_recon2:8.6398 kl_div_z:46.9873 kl_div_w:80562722.0312 kl_div_w2:713.2164 
+2022-11-15 04:19:35 INFO epoch:40/10000000 x_recon:8.5057 y_recon:17.9131 y_recon2:10.3410 kl_div_z:38.8419 kl_div_w:91161634.6562 kl_div_w2:731.6462 
+2022-11-15 04:20:09 INFO epoch:41/10000000 x_recon:8.4128 y_recon:16.5486 y_recon2:6.2708 kl_div_z:31.0600 kl_div_w:67718836.4688 kl_div_w2:742.5489 
+2022-11-15 04:20:43 INFO epoch:42/10000000 x_recon:8.3365 y_recon:21.9939 y_recon2:7.4864 kl_div_z:39.5789 kl_div_w:38228073.2812 kl_div_w2:754.8406 
+2022-11-15 04:21:18 INFO epoch:43/10000000 x_recon:8.2805 y_recon:25.9093 y_recon2:15.9432 kl_div_z:51.0750 kl_div_w:32883044.7344 kl_div_w2:777.8714 
+2022-11-15 04:21:52 INFO epoch:44/10000000 x_recon:8.2251 y_recon:27.3173 y_recon2:9.8052 kl_div_z:138.5320 kl_div_w:55962351.2266 kl_div_w2:787.2966 
+2022-11-15 04:22:26 INFO epoch:45/10000000 x_recon:8.1404 y_recon:21.7691 y_recon2:12.7886 kl_div_z:54.6355 kl_div_w:23744936.2188 kl_div_w2:803.7876 
+2022-11-15 04:23:00 INFO epoch:46/10000000 x_recon:8.0669 y_recon:20.2897 y_recon2:9.0395 kl_div_z:52.5546 kl_div_w:10391335.5625 kl_div_w2:851.4738 
+2022-11-15 04:23:34 INFO epoch:47/10000000 x_recon:8.0224 y_recon:20.9353 y_recon2:9.1419 kl_div_z:63.6195 kl_div_w:41351590.6406 kl_div_w2:886.8809 
+2022-11-15 04:24:08 INFO epoch:48/10000000 x_recon:8.0128 y_recon:23.8093 y_recon2:11.4956 kl_div_z:124.5290 kl_div_w:558339827.0312 kl_div_w2:913.9980 
+2022-11-15 04:24:43 INFO epoch:49/10000000 x_recon:8.0555 y_recon:36.9028 y_recon2:8.5305 kl_div_z:86.8952 kl_div_w:914101452.2500 kl_div_w2:930.4262 
+2022-11-15 04:24:46 INFO   train recontructions saved: output/stage1/log/recon_50.png

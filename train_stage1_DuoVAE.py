@@ -45,17 +45,18 @@ if __name__ == "__main__":
 
     """
     # To continue training from a saved checkpoint, set load_dir to a directory containing *.pt files   
-    # example: load_dir = "output/stage1/model/"
+    # example: load_dir = "output/stage1/model"
     """
-    # load_dir = "output/stage1/model/"
+    starting_epoch = 1
     load_dir = None
+    # load_dir = "output/stage1/model2"
     if load_dir is not None:
         load_model(model, load_dir, logger)
     model.train()
 
     # train
     losses_all = {}
-    for epoch in range(1, params["train"]["n_epoch"]+1):
+    for epoch in range(starting_epoch, starting_epoch+params["train"]["n_epoch"]+1):
         losses_curr_epoch = {}
         batch_idx = 0
         for batch_idx, data in enumerate(dataloader, 0):
@@ -94,7 +95,7 @@ if __name__ == "__main__":
             losses_all[loss_name].append(loss_val)
 
         # log every certain epochs
-        do_initial_checks = ((epoch > 0 and epoch <= 50) and (epoch % 10 == 0))
+        do_initial_checks = False #((epoch > 0 and epoch <= 50) and (epoch % 10 == 0))
         if do_initial_checks or (epoch % params["train"]["log_freq"] == 0):
             loss_str = "epoch:{}/{} ".format(epoch, params["train"]["n_epoch"])
             for loss_name, loss_vals in losses_all.items():
@@ -109,7 +110,7 @@ if __name__ == "__main__":
                 logger.print(gpu_stat.get_stat_str())
 
                 # save loss plot
-                json_path, save_path = save_losses(save_dir=dirs["log"], epoch=epoch, losses=losses_all)
+                json_path, save_path = save_losses(save_dir=dirs["log"], epoch=epoch-starting_epoch+1, losses=losses_all)
                 logger.print("  train losses saved: {}, {}".format(json_path, save_path))
 
                 # save model
