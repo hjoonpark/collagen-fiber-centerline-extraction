@@ -1,0 +1,15 @@
+{
+    "data_dir": "data/final_train_test",
+    "train": {
+        "n_epoch": 10000000,
+        "batch_size": 1200,
+        "lr": 0.00001,
+        "log_freq": 20,
+        "save_freq": 1000
+    },
+    "cgan": {
+        "w_gan": 0.05,
+        "D_update_interval": 5,
+        "G_warm_up": 0
+    }
+}

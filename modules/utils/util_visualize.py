@@ -13,26 +13,47 @@ def save_image(I, save_path):
     I.save(save_path)
     return save_path
 
-def save_reconstructions(save_dir, model, epoch, n_samples=10):
-    x = as_np(model.x)
-    x_recon = as_np(model.x_recon)
-    N = min(n_samples, x.shape[0])
-    x = x[0:N]
-    x_recon = x_recon[0:N]
-
-    _, n_channel, h, w = x.shape
+def images_to_row(images):
+    N, n_channel, h, w = images.shape
     vdivider = np.ones((n_channel, h, 1))
-
     for img_idx in range(N):
-        xi = x[img_idx]
-        xi_recon = x_recon[img_idx]
+        Ii = images[img_idx]
+        I = Ii if img_idx == 0 else np.concatenate((I, vdivider, Ii), axis=-1)
+    return I
 
-        X = xi if img_idx == 0 else np.concatenate((X, vdivider, xi), axis=-1)
-        X_recon = xi_recon if img_idx == 0 else np.concatenate((X_recon, vdivider, xi_recon), axis=-1)
+def save_reconstructions(stage, save_dir, model, epoch, n_samples=10):
+    if stage == 1:
+        # DuoVAE
+        centerline = as_np(model.x)
+        N = min(n_samples, centerline.shape[0])
+        centerline = centerline[0:N]
 
-    hdivider = np.ones((n_channel, 1, X.shape[-1]))
-    img_out = np.transpose(np.concatenate((X, hdivider, X_recon), axis=1), (1, 2, 0)).squeeze()
+        centerline_recon = as_np(model.x_recon[0:N])
 
+        I = images_to_row(centerline)
+        I_recon = images_to_row(centerline_recon)
+
+        n_channel = 1
+        hdivider = np.ones((n_channel, 1, I.shape[-1]))
+        img_out = np.transpose(np.concatenate((I, hdivider, I_recon), axis=1), (1, 2, 0)).squeeze()
+
+    elif stage == 2:
+        # cGAN
+        centerline = as_np(model.centerline)
+        N = min(n_samples, centerline.shape[0])
+        centerline = centerline[0:N]
+
+        image_recon = as_np(model.image_recon[0:N])
+        image_true = as_np(model.image[0:N])
+
+        C = images_to_row(centerline)
+        I_recon = images_to_row(image_recon)
+        I_true = images_to_row(image_true)
+
+        n_channel = 1
+        hdivider = np.ones((n_channel, 1, C.shape[-1]))
+        img_out = np.transpose(np.concatenate((C, hdivider, I_recon, hdivider, I_true), axis=1), (1, 2, 0)).squeeze()
+        
     save_path = os.path.join(save_dir, "recon_{}.png".format(epoch))
     save_image(img_out, save_path)
     return save_path

@@ -2,7 +2,7 @@
     "data_dir": "data/36k",
     "train": {
         "n_epoch": 10000000,
-        "batch_size": 2700,
+        "batch_size": 1300,
         "lr": 0.0001,
         "log_freq": 1,
         "save_freq": 50
@@ -16,7 +16,7 @@
         "beta_w": 0.001,
         "beta_w2": 0.005,
         "hid_channel": 64,
-        "hid_dim_x": 1024,
+        "hid_dim_x": 512,
         "hid_dim_y": 256
     }
 }

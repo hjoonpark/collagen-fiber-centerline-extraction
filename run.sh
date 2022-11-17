@@ -1,0 +1,1 @@
+clear; python train.py 2

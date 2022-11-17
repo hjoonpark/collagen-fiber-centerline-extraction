@@ -6,7 +6,8 @@ import torch
 import torch.nn as nn
 import torch.distributions as dist
 from torch.nn import functional as F
-from modules.utils.util_model import get_available_devices, View, reparameterize, kl_divergence
+from modules.utils.util_model import get_available_devices, View
+from modules.utils.util_io import as_np
 
 class DuoVAE(nn.Module):
     def __init__(self, params, is_train, logger, img_channel=1, y_dim=6):
@@ -16,17 +17,11 @@ class DuoVAE(nn.Module):
         self.y_dim = y_dim
         
         # parameters
-        lr = params["train"]["lr"]
         z_dim = params["duovae"]["z_dim"]
         w_dim = params["duovae"]["w_dim"]
         hid_channel = params["duovae"]["hid_channel"]
         hid_dim_x = params["duovae"]["hid_dim_x"]
         hid_dim_y = params["duovae"]["hid_dim_y"]
-        self.x_recon_weight = params["duovae"]["x_recon_weight"]
-        self.y_recon_weight = params["duovae"]["y_recon_weight"]
-        self.beta_z = params["duovae"]["beta_z"]
-        self.beta_w = params["duovae"]["beta_w"]
-        self.beta_w2 = params["duovae"]["beta_w2"]
 
         # define models
         self.encoder_x = EncoderX(img_channel, hid_channel, hid_dim_x, z_dim, w_dim).to(self.device)
@@ -37,22 +32,43 @@ class DuoVAE(nn.Module):
         # used by util.model to save/load model
         self.model_names = ["encoder_x", "decoder_x", "encoder_y", "decoder_y"]
 
-        # used by util.model to plot losses
-        self.loss_names = ["x_recon", "y_recon", "y_recon2", "kl_div_z", "kl_div_w", "kl_div_w2"]
-
         if is_train:
+            # parameters used for training
+            lr = params["train"]["lr"]
+            self.x_recon_weight = params["duovae"]["x_recon_weight"]
+            self.y_recon_weight = params["duovae"]["y_recon_weight"]
+            self.beta_z = params["duovae"]["beta_z"]
+            self.beta_w = params["duovae"]["beta_w"]
+            self.beta_w2 = params["duovae"]["beta_w2"]
+
+            # optimizers
             params_x = itertools.chain(self.encoder_x.parameters(), self.decoder_x.parameters(), self.decoder_y.parameters())
             params_y = itertools.chain(self.encoder_y.parameters(), self.decoder_y.parameters())
-
             self.optimizer_x = torch.optim.Adam(params_x, lr=lr)
             self.optimizer_y = torch.optim.Adam(params_y, lr=lr)
 
+            # losses
             pos_weight = torch.tensor([10]).float().to(self.device)
             self.criteriaBCEWithLogits = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight, reduction='sum')
 
+            # used by util.model to plot losses
+            self.loss_names = ["x_recon", "y_recon", "y_recon2", "kl_div_z", "kl_div_w", "kl_div_w2"]
+
     def set_input(self, data):
+        self.filename = data["filename"]
         self.x = data['centerline'].to(self.device) # (B, img_channel, 256, 256)
         self.y = data['property'].to(self.device) # (B, y_dim)
+
+    def optimize_parameters(self, iters, epoch):
+        # main VAE
+        self.optimizer_x.zero_grad()
+        self.forward_backward_x()
+        self.optimizer_x.step()
+        
+        # auxiliary VAE
+        self.optimizer_y.zero_grad()
+        self.forward_backward_y()
+        self.optimizer_y.step()
 
     def encode(self, x, sample: bool):
         # alias for encode_x
@@ -62,8 +78,8 @@ class DuoVAE(nn.Module):
         # encode
         (z_mean, w_mean), (z_logvar, w_logvar) = self.encoder_x(x)
         # sample w, z
-        z, Qz = reparameterize(z_mean, z_logvar, sample)
-        w, Qw = reparameterize(w_mean, w_logvar, sample)
+        z, Qz = self.reparameterize(z_mean, z_logvar, sample)
+        w, Qw = self.reparameterize(w_mean, w_logvar, sample)
         return (z, w), (Qz, Qw)
 
     def decode(self, z, w):
@@ -79,7 +95,7 @@ class DuoVAE(nn.Module):
         # encode
         w_mean, w_logvar = self.encoder_y(y)
         # sample w
-        w2, Qw2 = reparameterize(w_mean, w_logvar, sample=sample)
+        w2, Qw2 = self.reparameterize(w_mean, w_logvar, sample=sample)
         return w2, Qw2
 
     def decode_y(self, w2):
@@ -99,13 +115,13 @@ class DuoVAE(nn.Module):
         self.loss_y_recon = F.mse_loss(self.y_recon, self.y, reduction="sum") / (batch_size*self.y_dim)
 
         Pz = dist.Normal(torch.zeros_like(self.z), torch.ones_like(self.z))
-        self.loss_kl_div_z = kl_divergence(Qz, Pz) / batch_size
+        self.loss_kl_div_z = self.kl_divergence(Qz, Pz) / batch_size
 
         with torch.no_grad(): # no backpropagation on the encoder q(y|w) during this step
             w_mean, w_logvar = self.encoder_y(self.y)
             w_std = torch.sqrt(torch.exp(w_logvar.detach()))
             Pw = dist.Normal(w_mean.detach(), w_std)
-        self.loss_kl_div_w = kl_divergence(Qw, Pw) / batch_size
+        self.loss_kl_div_w = self.kl_divergence(Qw, Pw) / batch_size
 
         loss = self.x_recon_weight*self.loss_x_recon + self.y_recon_weight*self.loss_y_recon \
                 + self.beta_z*self.loss_kl_div_z + self.beta_w*self.loss_kl_div_w
@@ -122,22 +138,54 @@ class DuoVAE(nn.Module):
         self.loss_y_recon2 = F.mse_loss(self.y_recon2, self.y, reduction="sum") / batch_size
 
         Pw = dist.Normal(torch.zeros_like(self.w2), torch.ones_like(self.w2))
-        self.loss_kl_div_w2 = kl_divergence(Qw2, Pw) / batch_size
+        self.loss_kl_div_w2 = self.kl_divergence(Qw2, Pw) / batch_size
 
         loss = self.y_recon_weight*self.loss_y_recon2 + self.beta_w2*self.loss_kl_div_w2
         loss.backward()
 
-    def optimize_parameters(self):
-        # main VAE
-        self.optimizer_x.zero_grad()
-        self.forward_backward_x()
-        self.optimizer_x.step()
-        
-        # auxiliary VAE
-        self.optimizer_y.zero_grad()
-        self.forward_backward_y()
-        self.optimizer_y.step()
-            
+    def traverse_y(self, x, y, y_mins, y_maxs, n_samples):
+        x = x.to(self.device)
+        y = y.to(self.device)
+
+        unit_range = torch.arange(0, 1+1e-5, 1.0/(n_samples-1))
+
+        (z, _), _ = self.encode(x[[0]], sample=False)
+
+        _, n_channel, h, w = x.shape
+        vdivider = np.ones((1, n_channel, h, 1))
+        hdivider = np.ones((1, n_channel, 1, w*n_samples + (n_samples-1)))
+        # traverse
+        x_recons_all = None
+        for y_idx in range(len(y_mins)):
+            x_recons = None
+            for a in unit_range:
+                y_new = torch.clone(y[[0]]).cpu() # had to move to cpu for some internal bug in the next line (Apple silicon-related)
+                y_new[0, y_idx] = y_mins[y_idx]*(1-a) + y_maxs[y_idx]*a
+                y_new = y_new.to(self.device)
+
+                # encode for w
+                w, _ = self.encoder_y(y_new)
+
+                # decode
+                _, x_recon, _ = self.decode(z, w)
+                x_recons = as_np(x_recon) if x_recons is None else np.concatenate((x_recons, vdivider, as_np(x_recon)), axis=-1)
+            x_recons_all = x_recons if x_recons_all is None else np.concatenate((x_recons_all, hdivider, x_recons), axis=2)
+        x_recons_all = np.transpose(x_recons_all, (0, 2, 3, 1))
+        return x_recons_all
+          
+    def reparameterize(self, mean, logvar, sample):
+        if sample:
+            std = torch.exp(0.5*logvar)
+            P = dist.Normal(mean, std)
+            z = P.rsample()
+            return z, P
+        else:
+            return mean, None
+
+    def kl_divergence(self, Q, P):
+        batch_size, z_dim = Q.loc.shape
+        return dist.kl_divergence(Q, P).sum()
+  
 """
 Encoder q(z,w|x): Encode input x to latent variables (z, w)
 """  
@@ -147,12 +195,12 @@ class EncoderX(nn.Module):
         self.z_dim = z_dim
         self.w_dim = w_dim
         
-        flat_dim = np.product((64*img_channel, 16, 16))
+        flat_dim = np.product((128*img_channel, 16, 16))
         self.encoder = nn.Sequential(
-            ResidualConv(img_channel, 8*img_channel, sampling="down"), # 128
-            ResidualConv(8*img_channel, 16*img_channel, sampling="down"), # 64
-            ResidualConv(16*img_channel, 32*img_channel, sampling="down"), # 32
-            ResidualConv(32*img_channel, 64*img_channel, sampling="down"), # 16
+            ResidualConv(img_channel, 16*img_channel, sampling="down"), # 128
+            ResidualConv(16*img_channel, 32*img_channel, sampling="down"), # 64
+            ResidualConv(32*img_channel, 64*img_channel, sampling="down"), # 32
+            ResidualConv(64*img_channel, 128*img_channel, sampling="down"), # 16
             View((-1, flat_dim)),
             ResidualLinear(flat_dim, hid_dim),
             ResidualLinear(hid_dim, 2*(z_dim + w_dim)),
@@ -178,16 +226,16 @@ class DecoderX(nn.Module):
     def __init__(self, img_channel, hid_channel, hid_dim, z_dim, w_dim):
         super().__init__()
 
-        fc_shape = (64*img_channel, 16, 16)
+        fc_shape = (128*img_channel, 16, 16)
         self.decoder = nn.Sequential(
             ResidualLinear(z_dim + w_dim, hid_dim),
             ResidualLinear(hid_dim, np.product(fc_shape)),
             View((-1, fc_shape[0], fc_shape[1], fc_shape[2])),
-            ResidualConv(64*img_channel, 32*img_channel, sampling="up"), # 32
-            ResidualConv(32*img_channel, 16*img_channel, sampling="up"), # 64
-            ResidualConv(16*img_channel, 8*img_channel, sampling="up"), # 128
-            ResidualConv(8*img_channel, 4*img_channel, sampling="up"), # 256
-            nn.Conv2d(4*img_channel, 1, kernel_size=3, stride=1, padding=1)
+            ResidualConv(128*img_channel, 64*img_channel, sampling="up"), # 32
+            ResidualConv(64*img_channel, 32*img_channel, sampling="up"), # 64
+            ResidualConv(32*img_channel, 16*img_channel, sampling="up"), # 128
+            ResidualConv(16*img_channel, 8*img_channel, sampling="up"), # 256
+            nn.Conv2d(8*img_channel, 1, kernel_size=3, stride=1, padding=1)
         )
         # self.decoder = nn.Sequential(
         #     nn.Linear(z_dim+w_dim, hid_dim),
