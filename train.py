@@ -133,8 +133,8 @@ if __name__ == "__main__":
                 logger.print(gpu_stat.get_stat_str())
 
                 # save loss plot
-                json_path, save_path = save_losses(save_dir=dirs["log"], epoch=epoch-starting_epoch+1, losses=losses_all)
-                logger.print("  train losses saved: {}, {}".format(json_path, save_path))
+                save_path = save_losses(save_dir=dirs["log"], epoch=epoch-starting_epoch+1, losses=losses_all)
+                logger.print(f"  train losses saved: {save_path}")
 
                 # save model
                 save_dir = save_model(save_dir=dirs["model"], model=model)

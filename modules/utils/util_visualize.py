@@ -83,4 +83,4 @@ def save_losses(save_dir, losses, epoch):
     save_path = os.path.join(save_dir, "losses.png")
     plt.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.close()
-    return json_path, save_path
+    return save_path
