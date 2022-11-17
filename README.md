@@ -5,13 +5,15 @@
 PyTorch implementation of the **collagen fiber centerline extraction network** (Stage I, II, and III) proposed in
 
 **`Variational auto-encoder for collagen fiber centerline generation and extraction in fibrotic cancer tissues`**,
+
 `Medical Image Analysis (under review)`
 
-## Related repository:
+![figure](/etc/figures/pipeline.png)
+
+## Related repository
 -  Collagen fiber extraction and analysis in cancer tissue microenvironment: [Analysis repository](https://github.com/uw-loci/collagen-fiber-metrics).
 - DuoVAE for property-controlled data generation: [DuoVAE repository](https://github.com/hjoonpark/DuoVAE).
 
-![figure](/etc/figures/pipeline.png)
 
 ---
 
@@ -23,4 +25,4 @@ PyTorch implementation of the **collagen fiber centerline extraction network** (
 
 ## Citation
 
-`coming`
+    coming

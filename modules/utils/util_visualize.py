@@ -60,9 +60,9 @@ def save_reconstructions(stage, save_dir, model, epoch, n_samples=10):
 
 def save_losses(save_dir, losses, epoch):
     # save loss values as json
-    json_path = os.path.join(save_dir, "losses.json")
-    with open(json_path, "w+") as f:
-        json.dump(losses, f)
+    # json_path = os.path.join(save_dir, "losses.json")
+    # with open(json_path, "w+") as f:
+    #     json.dump(losses, f)
 
     # save loss values as plot
     plt.figure(figsize=(10, 4))

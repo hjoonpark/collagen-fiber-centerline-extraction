@@ -5,7 +5,7 @@
         "batch_size": 1200,
         "lr": 0.00001,
         "log_freq": 20,
-        "save_freq": 1000
+        "save_freq": 10000
     },
     "cgan": {
         "w_gan": 0.05,

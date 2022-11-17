@@ -84,8 +84,8 @@ class cGAN(nn.Module):
         loss_D_real = self.criterionGAN(pred_real, is_real)
         loss_D_fake = self.criterionGAN(pred_fake, is_fake)
 
-        self.loss_discriminator = (loss_D_real + loss_D_fake) * 0.5
-        self.loss_discriminator.backward()
+        self.loss_D = (loss_D_real + loss_D_fake) * 0.5
+        self.loss_D.backward()
         
     def backward_G(self, iters):
         images_fake = torch.cat((self.centerline, self.image_recon), dim=1)
