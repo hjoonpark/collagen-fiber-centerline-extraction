@@ -69,7 +69,8 @@ class cGAN(nn.Module):
         self.optimizer_G.step()
 
     def forward(self, centerline):
-        return self.G(centerline)
+        image_recon = self.G(centerline)
+        return image_recon
 
     def backward_D(self):
         images_real = torch.cat((self.centerline, self.image), dim=1)

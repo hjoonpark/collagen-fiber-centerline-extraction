@@ -1,0 +1,14 @@
+{
+    "data_dir": "data/final_train_test",
+    "train": {
+        "n_epoch": 20000,
+        "batch_size": 500,
+        "lr": 0.00001,
+        "log_freq": 10,
+        "save_freq": 500
+    },
+    "unet": {
+        "loss_type": "focal",
+        "n_filters": 16
+    }
+}

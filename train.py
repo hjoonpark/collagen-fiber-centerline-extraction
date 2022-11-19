@@ -1,7 +1,7 @@
 import os, sys, json, shutil
 
 from modules.datasets.collagen_centerline_dataset import CollagenCenterlineDataset
-from modules.models import DuoVAE, cGAN
+from modules.models import DuoVAE, cGAN, UNet
 from modules.utils.logger import Logger, LogLevel, GPUStat
 from modules.utils.util_io import make_directories, load_parameters, set_all_seeds, as_np
 from modules.utils.util_visualize import save_image, save_reconstructions, save_losses, images_to_row
@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     # load dataset
     data_dir = params["data_dir"]
-    dataset_train = CollagenCenterlineDataset(data_dir=os.path.join(data_dir, "train"), stage=stage_num, logger=logger)
+    dataset_train = CollagenCenterlineDataset(data_dir=os.path.join(data_dir, "train"), stage=stage_num, rand_augment=(stage_num != 1), logger=logger)
     dataloader_train = torch.utils.data.DataLoader(dataset_train, shuffle=True, batch_size=params["train"]["batch_size"])
 
     # init model
@@ -44,8 +44,17 @@ if __name__ == "__main__":
         model = cGAN(params=params, is_train=True, logger=logger)
 
         # test data
-        dataset_tests = CollagenCenterlineDataset(data_dir=os.path.join(data_dir, "test"), stage=stage_num, logger=logger)
+        dataset_tests = CollagenCenterlineDataset(data_dir=os.path.join(data_dir, "test"), stage=stage_num, rand_augment=False, logger=logger)
         dataloader_test = torch.utils.data.DataLoader(dataset_tests, shuffle=False, batch_size=1)
+    elif stage_num == 3:
+        model_fname = "unet.py"
+        model = UNet(params=params, is_train=True, logger=logger)
+
+        # test data
+        dataset_tests = CollagenCenterlineDataset(data_dir=os.path.join(data_dir, "test"), stage=stage_num, rand_augment=False, logger=logger)
+        dataloader_test = torch.utils.data.DataLoader(dataset_tests, shuffle=False, batch_size=1)
+    else:
+        raise NotImplementedError(f"[{self.__class__.__name__ }] Stage number should be either 1, 2, or 3.")
 
     logger.print(model)
     logger.print("parameters={}".format(json.dumps(params, indent=4)))
@@ -165,6 +174,28 @@ if __name__ == "__main__":
                     I_true = images_to_row(np.array(image_trues).squeeze()[:, None, :, :])
                     hdivider = np.ones((1, 1, C.shape[-1]))
                     img_out = np.transpose(np.concatenate((C, hdivider, I_recon, hdivider, I_true), axis=1), (1, 2, 0)).squeeze()
+                    save_path = os.path.join(dirs["validation"], "val_{}.png".format(epoch))
+                    save_image(img_out, save_path)
+                elif stage_num == 3:
+                    # UNet on test images
+                    images = []
+                    centerline_recons = []
+                    centerline_trues = []
+                    n_samples = 10
+                    for i, data in enumerate(dataloader_test, 0):
+                        if i >= n_samples:
+                            break
+                        model.set_input(data)
+                        centerline_recon = model.forward(model.image)
+                        images.append(as_np(model.image))
+                        centerline_recons.append(as_np(centerline_recon))
+                        centerline_trues.append(as_np(model.centerline))
+
+                    I = images_to_row(np.array(images).squeeze()[:, None, :, :])
+                    C_recon = images_to_row(np.array(centerline_recons).squeeze()[:, None, :, :])
+                    C_true = images_to_row(np.array(centerline_trues).squeeze()[:, None, :, :])
+                    hdivider = np.ones((1, 1, I.shape[-1]))
+                    img_out = np.transpose(np.concatenate((I, hdivider, C_recon, hdivider, C_true), axis=1), (1, 2, 0)).squeeze()
                     save_path = os.path.join(dirs["validation"], "val_{}.png".format(epoch))
                     save_image(img_out, save_path)
             model.train()

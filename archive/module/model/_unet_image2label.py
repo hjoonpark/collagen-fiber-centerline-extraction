@@ -13,7 +13,6 @@ class _unet_image2label(BaseModel):
         self.netG = self.to_device(unet)
 
         if is_train:
-
             if opt['loss_type'] == 'focal':
                 self.criterion = BinaryFocalLoss(0.75, 2, pos_weight=torch.tensor([10]).float().cuda(), is_logits=False)
             if opt['loss_type'] == 'BCE': 

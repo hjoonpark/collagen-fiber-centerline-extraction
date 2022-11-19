@@ -53,7 +53,24 @@ def save_reconstructions(stage, save_dir, model, epoch, n_samples=10):
         n_channel = 1
         hdivider = np.ones((n_channel, 1, C.shape[-1]))
         img_out = np.transpose(np.concatenate((C, hdivider, I_recon, hdivider, I_true), axis=1), (1, 2, 0)).squeeze()
-        
+    
+    elif stage == 3:
+        # UNet
+        image = as_np(model.image)
+        N = min(n_samples, image.shape[0])
+        image = image[0:N]
+
+        centerline_recon = as_np(model.centerline_recon[0:N])
+        centerline_true = as_np(model.centerline[0:N])
+
+        I = images_to_row(image)
+        C_recon = images_to_row(centerline_recon)
+        C_true = images_to_row(centerline_true)
+
+        n_channel = 1
+        hdivider = np.ones((n_channel, 1, I.shape[-1]))
+        img_out = np.transpose(np.concatenate((I, hdivider, C_recon, hdivider, C_true), axis=1), (1, 2, 0)).squeeze()
+
     save_path = os.path.join(save_dir, "recon_{}.png".format(epoch))
     save_image(img_out, save_path)
     return save_path
