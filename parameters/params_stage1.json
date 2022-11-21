@@ -2,7 +2,7 @@
     "data_dir": "data/36k",
     "train": {
         "n_epoch": 10000000,
-        "batch_size": 1300,
+        "batch_size": 3500,
         "lr": 0.0001,
         "log_freq": 1,
         "save_freq": 50
@@ -10,13 +10,13 @@
     "duovae": {
         "z_dim": 6,
         "w_dim": 6,
-        "x_recon_weight": 5.0,
+        "x_recon_weight": 2.0,
         "y_recon_weight": 1.0,
-        "beta_z": 0.001,
-        "beta_w": 0.001,
-        "beta_w2": 0.005,
+        "beta_z": 0.01,
+        "beta_w": 1,
+        "beta_w2": 0.01,
         "hid_channel": 64,
-        "hid_dim_x": 512,
-        "hid_dim_y": 256
+        "hid_dim_x": 1024,
+        "hid_dim_y": 32
     }
 }

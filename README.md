@@ -1,6 +1,6 @@
 # Collagen Fiber Centerline Extraction Network
 
-PyTorch implementation of the **collagen fiber centerline extraction network proposed** in\
+PyTorch implementation of the **collagen fiber centerline extraction network** proposed in\
 [**Variational auto-encoder for collagen fiber centerline generation and extraction in fibrotic cancer tissues**](),\
 Medical Image Analysis 2022 (under review).
 
