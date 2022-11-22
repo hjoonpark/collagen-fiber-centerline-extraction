@@ -36,12 +36,11 @@ Command format is `python train.py <stage-number> --model-dir <model-directory>`
 
 The outputs will be saved in the directories `output/stage1`, `output/stage2`, and `output/stage3`.
 
+### Optional
 To resume from a saved checkpoint, pass in `--model-dir` argument to a directory where the saved model (`.pt` files) is located and (optionally) set the number of starting epoch, for example
 
-    # resume from saved model in 'output/stage1/model' at epoch 1000
-    python train.py 1 --model-dir "output/stage1/model" --starting-epoch 1000
-
-
+    # resume from saved model in "output/stage1/model" at epoch 1000
+    python train.py 1 --model-dir output/stage1/model --starting-epoch 1000
 
 ## Results
 
