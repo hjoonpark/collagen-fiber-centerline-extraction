@@ -16,25 +16,32 @@ Medical Image Analysis 2022 (under review).
 
 ## Train
 
-Command format is `python train.py <stage-number>`, for example
+Command format is `python train.py <stage-number> --model-dir <model-directory>`, for example
 
-### Stage 1
+### Stage I.
 **DuoVAE** for generating collagen centerlines with desired centerline properties:
 
     python train.py 1
 
-### Stage 2
+### Stage II.
 **cGAN** for generating collagen images from collagen centerlines:
 
     python train.py 2
 
-### Stage 3
+### Stage III.
 
 **UNet** for extracting collagen centerlines from collagen images:
 
     python train.py 3
 
 The outputs will be saved in the directories `output/stage1`, `output/stage2`, and `output/stage3`.
+
+To resume from a saved checkpoint, pass in `--model-dir` argument to a directory where the saved model (`.pt` files) is located and (optionally) set the number of starting epoch, for example
+
+    # resume from saved model in 'output/stage1/model' at epoch 1000
+    python train.py 1 --model-dir "output/stage1/model" --starting-epoch 1000
+
+
 
 ## Results
 

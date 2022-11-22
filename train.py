@@ -1,4 +1,4 @@
-import os, sys, json, shutil
+import os, sys, json, shutil, glob
 
 from modules.datasets.collagen_centerline_dataset import CollagenCenterlineDataset
 from modules.models import DuoVAE, cGAN, UNet
@@ -15,9 +15,13 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='PyTorch implementation of the paper: Variational auto-encoder for collagen fiber centerline generation and extraction in fibrotic cancer tissues.')
     parser.add_argument('stage', type=int, help='Stage number to train: 1, 2, or 3.')
+    parser.add_argument('--model-dir', type=str, help='Model directory where .pt file are located.', default=None)
+    parser.add_argument('--starting-epoch', type=int, help='The epoch number to start from - used only for logging and plotting purpose.', default=1)
     args = parser.parse_args()
     stage_num = args.stage
     stage_name = "stage{}".format(stage_num)
+    model_dir = args.model_dir
+    starting_epoch = args.starting_epoch
 
     # make output directories
     dirs = make_directories(root_dir=os.path.join("output", stage_name), sub_dirs=["log", "model", "validation"])
@@ -26,6 +30,7 @@ if __name__ == "__main__":
     logger = Logger(save_path=os.path.join(dirs["log"], "log.txt"), muted=False)
     gpu_stat = GPUStat()
     logger.print(f"=============== Training Stage {stage_num} ===============")
+    logger.print(f"input arguments: {args}")
 
     # load user-defined parameters
     params = load_parameters(param_path=f"parameters/params_stage{stage_num}.json", copy_to_dir=os.path.join(dirs["log"]))
@@ -69,15 +74,12 @@ if __name__ == "__main__":
     shutil.copyfile(f"modules/models/{model_fname}", os.path.join(dirs["model"], model_fname))
 
     """
-    # To continue training from a saved checkpoint, set load_dir to a directory containing *.pt files   
-    # example: load_dir = "output/stage1/model"
+    # To continue training from a saved checkpoint, set model_dir to a directory containing *.pt files   
+    # python train.py 1 --model-dir "output/stage1/model/"
     """
-    starting_epoch = 1 # For logging purpose. starting_epoch > 1 in case resuming from a checkpoint
-    load_dir = None
-    # load_dir = "output/stage1/model2"
-    if load_dir is not None:
-        assert stage_name in load_dir, print("[ERROR] Check if the model being loaded corresponds to the correct stage!")
-        load_model(model, load_dir, logger)
+    if os.path.isdir(model_dir):
+        if len(glob.glob(os.path.join(model_dir, "*.pt"))) > 0:
+            load_model(model, model_dir, logger)
     model.train()
 
     # train
