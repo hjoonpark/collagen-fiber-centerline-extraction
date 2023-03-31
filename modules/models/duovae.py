@@ -6,15 +6,16 @@ import torch
 import torch.nn as nn
 import torch.distributions as dist
 from torch.nn import functional as F
-from modules.utils.util_model import get_available_devices, View
+from modules.utils.util_model import View
 from modules.utils.util_io import as_np
+from modules.models.utils import *
 
 class DuoVAE(nn.Module):
-    def __init__(self, params, is_train, logger, img_channel=1, y_dim=6):
+    def __init__(self, params, is_train, img_channel=1, y_dim=6, device='cpu'):
         super().__init__()
-        self.device, self.gpu_ids = get_available_devices(logger)
         self.img_channel = img_channel
         self.y_dim = y_dim
+        self.device = device
         
         # parameters
         z_dim = params["duovae"]["z_dim"]
@@ -24,10 +25,10 @@ class DuoVAE(nn.Module):
         hid_dim_y = params["duovae"]["hid_dim_y"]
 
         # define models
-        self.encoder_x = EncoderX(img_channel, hid_channel, hid_dim_x, z_dim, w_dim).to(self.device)
-        self.decoder_x = DecoderX(img_channel, hid_channel, hid_dim_x, z_dim, w_dim).to(self.device)
-        self.encoder_y = EncoderY(y_dim, hid_dim_y, w_dim).to(self.device)
-        self.decoder_y = DecoderY(y_dim, hid_dim_y, w_dim).to(self.device)
+        self.encoder_x = EncoderX(img_channel, hid_channel, hid_dim_x, z_dim, w_dim)
+        self.decoder_x = DecoderX(img_channel, hid_channel, hid_dim_x, z_dim, w_dim)
+        self.encoder_y = EncoderY(y_dim, hid_dim_y, w_dim)
+        self.decoder_y = DecoderY(y_dim, hid_dim_y, w_dim)
 
         # used by util.model to save/load model
         self.model_names = ["encoder_x", "decoder_x", "encoder_y", "decoder_y"]
@@ -48,8 +49,13 @@ class DuoVAE(nn.Module):
             self.optimizer_y = torch.optim.Adam(params_y, lr=lr)
 
             # losses
-            pos_weight = torch.tensor([10]).float().to(self.device)
-            self.criteriaBCEWithLogits = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight, reduction='sum')
+            loss_type = params["duovae"]["loss_type"]
+            if loss_type == "focal":
+                pos_weight = torch.tensor([10]).float().to(self.device)
+                self.criterion = BinaryFocalLoss(0.75, 2, pos_weight=pos_weight, is_logits=False)
+            elif loss_type == "BCE":
+                pos_weight = torch.tensor([10]).float()
+                self.criterion = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight, reduction='mean')
 
             # used by util.model to plot losses
             self.loss_names = ["x_recon", "y_recon", "y_recon2", "kl_div_z", "kl_div_w", "kl_div_w2"]
@@ -112,16 +118,16 @@ class DuoVAE(nn.Module):
         # losses
         batch_size, _, h, w = self.x.shape
         
-        self.loss_x_recon = self.criteriaBCEWithLogits(x_logits, self.x) / (batch_size*h*w)
-        self.loss_y_recon = F.mse_loss(self.y_recon, self.y, reduction="sum") / (batch_size*self.y_dim)
+        self.loss_x_recon = self.criterion(x_logits, self.x)
+        self.loss_y_recon = F.mse_loss(self.y_recon, self.y, reduction="mean")
 
         Pz = dist.Normal(torch.zeros_like(self.z), torch.ones_like(self.z))
-        self.loss_kl_div_z = self.kl_divergence(Qz, Pz) / batch_size
+        self.loss_kl_div_z = self.kl_divergence(Qz, Pz)
 
         w_mean, w_logvar = self.encoder_y(self.y)
         w_std = torch.exp(0.5*w_logvar)
         Pw = dist.Normal(w_mean.detach(), w_std.detach())
-        self.loss_kl_div_w = self.kl_divergence(Qw, Pw) / batch_size
+        self.loss_kl_div_w = self.kl_divergence(Qw, Pw)
 
         loss = self.x_recon_weight*self.loss_x_recon + self.y_recon_weight*self.loss_y_recon \
                 + self.beta_z*self.loss_kl_div_z + self.beta_w*self.loss_kl_div_w
@@ -135,10 +141,10 @@ class DuoVAE(nn.Module):
 
         # losses
         batch_size = self.x.shape[0]
-        self.loss_y_recon2 = F.mse_loss(self.y_recon2, self.y, reduction="sum") / (batch_size*self.y_dim)
+        self.loss_y_recon2 = F.mse_loss(self.y_recon2, self.y, reduction="mean")
 
         Pw = dist.Normal(torch.zeros_like(self.w2), torch.ones_like(self.w2))
-        self.loss_kl_div_w2 = self.kl_divergence(Qw2, Pw) / batch_size
+        self.loss_kl_div_w2 = self.kl_divergence(Qw2, Pw)
 
         loss = self.y_recon_weight*self.loss_y_recon2 + self.beta_w2*self.loss_kl_div_w2
         loss.backward()
@@ -184,8 +190,8 @@ class DuoVAE(nn.Module):
 
     def kl_divergence(self, Q, P):
         batch_size, z_dim = Q.loc.shape
-        return dist.kl_divergence(Q, P).sum()
-  
+        return dist.kl_divergence(Q, P).mean()
+    
 """
 Encoder q(z,w|x): Encode input x to latent variables (z, w)
 """  
@@ -197,30 +203,57 @@ class EncoderX(nn.Module):
         
         # flat_dim = np.product((hid_channel, 16, 16))
         # self.encoder = nn.Sequential(
-        #     ResidualConv(img_channel, hid_channel, sampling="down"), # 128
-        #     ResidualConv(hid_channel, hid_channel, sampling="down"), # 64
-        #     ResidualConv(hid_channel, hid_channel, sampling="down"), # 32
-        #     ResidualConv(hid_channel, hid_channel, sampling="down"), # 16
-        #     View((-1, flat_dim)),
-        #     nn.Linear(flat_dim, hid_dim),
+        #     ResidualConv(img_channel, 4, sampling="down"), # 128
+        #     ResidualConv(4, 8, sampling="down"), # 64
+        #     ResidualConv(8, 16, sampling="down"), # 32
+        #     ResidualConv(16, 32, sampling="down"), # 32
+        #     ResidualConv(32, 64, sampling="down"), # 16
+        #     View((-1, 64*8*8)),
+        #     nn.Linear(64*8*8, hid_dim),
         #     nn.LeakyReLU(0.2, True),
         #     nn.Linear(hid_dim, 2*(z_dim + w_dim)),
         # )
+
+        # self.encoder = nn.Sequential(
+        #     nn.Conv2d(img_channel, 8, kernel_size=3, stride=2, padding=1, bias=True), # (128, 128)
+        #     nn.LeakyReLU(0.2, True),
+        #     nn.Conv2d(8, 16, kernel_size=3, stride=2, padding=1, bias=True), # (64, 64)
+        #     nn.LeakyReLU(0.2, True),
+        #     nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1, bias=True), # (32, 32)
+        #     nn.LeakyReLU(0.2, True),
+        #     nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1, bias=True), # (16, 16)
+        #     nn.LeakyReLU(0.2, True),
+        #     nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1, bias=True), # (8, 8)
+        #     nn.LeakyReLU(0.2, True),
+        #     View((-1, 128*8*8)),
+        #     nn.Linear(128*8*8, hid_dim),
+        #     nn.LeakyReLU(0.2, True),
+        #     nn.Linear(hid_dim, 2*(z_dim + w_dim)),
+        # )
+
+        # self.encoder = nn.Sequential(
+        #     ResBlockDownsample(1, 4, bn=True), # 128
+        #     ResBlockDownsample(4, 8, bn=True), # 64
+        #     ResBlockDownsample(8, 16, bn=True), # 32
+        #     ResBlockDownsample(16, 32, bn=True), # 16
+        #     ResBlockDownsample(32, 64, bn=True), # 8
+        #     View((-1, 64*8*8)),
+        #     nn.Linear(64*8*8, hid_dim),
+        #     nn.LeakyReLU(0.2, True),
+        #     nn.Linear(hid_dim, 2*(z_dim + w_dim))
+        # )
+
         self.encoder = nn.Sequential(
-            nn.Conv2d(img_channel, 16, kernel_size=3, stride=2, padding=1, bias=True), # (128, 128)
+            DoubleConv(img_channel, 16),
+            Down(16, 16), # 128
+            Down(16, 32), # 64
+            Down(32, 32), # 32
+            Down(32, 64), # 16
+            Down(64, 64), # 8
+            View((-1, 64*8*8)),
+            nn.Linear(64*8*8, hid_dim),
             nn.LeakyReLU(0.2, True),
-            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1, bias=True), # (64, 64)
-            nn.LeakyReLU(0.2, True),
-            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1, bias=True), # (32, 32)
-            nn.LeakyReLU(0.2, True),
-            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1, bias=True), # (16, 16)
-            nn.LeakyReLU(0.2, True),
-            nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1, bias=True), # (8, 8)
-            nn.LeakyReLU(0.2, True),
-            View((-1, 256*8*8)),
-            nn.Linear(256*8*8, hid_dim),
-            nn.LeakyReLU(0.2, True),
-            nn.Linear(hid_dim, 2*(z_dim + w_dim)),
+            nn.Linear(hid_dim, 2*(z_dim + w_dim))
         )
 
     def forward(self, x):
@@ -243,37 +276,77 @@ class DecoderX(nn.Module):
     def __init__(self, img_channel, hid_channel, hid_dim, z_dim, w_dim):
         super().__init__()
 
-        fc_shape = (hid_channel, 16, 16)
+        # fc_shape = (hid_channel, 16, 16)
         # self.decoder = nn.Sequential(
         #     nn.Linear(z_dim + w_dim, hid_dim),
         #     nn.LeakyReLU(0.2, True),
-        #     nn.Linear(hid_dim, np.product(fc_shape)),
+        #     nn.Linear(hid_dim, 64*8*8),
         #     nn.LeakyReLU(0.2, True),
-        #     View((-1, fc_shape[0], fc_shape[1], fc_shape[2])),
-        #     ResidualConv(hid_channel, hid_channel, sampling="up"), # 32
-        #     ResidualConv(hid_channel, hid_channel, sampling="up"), # 64
-        #     ResidualConv(hid_channel, hid_channel, sampling="up"), # 128
-        #     ResidualConv(hid_channel, img_channel, sampling="up"), # 256
-        #     # nn.Conv2d(hid_channel//2, img_channel, kernel_size=3, stride=1, padding=1)
+        #     View((-1, 64, 8, 8)),
+        #     ResidualConv(64, 32, sampling="up"), # 32
+        #     ResidualConv(32, 16, sampling="up"), # 128
+        #     ResidualConv(16, 8, sampling="up"), # 256
+        #     ResidualConv(8, 4, sampling="up"), # 256
+        #     ResidualConv(4, 2, sampling="up"), # 256
+        #     nn.Conv2d(2, 1, kernel_size=3, stride=1, padding=1)
         # )
+
+        # self.decoder = nn.Sequential(
+        #     nn.Linear(z_dim+w_dim, hid_dim),
+        #     nn.LeakyReLU(0.2, True),
+        #     nn.Linear(hid_dim, 128*8*8),
+        #     nn.LeakyReLU(0.2, True),
+        #     View((-1, 128, 8, 8)),
+        #     nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1, bias=False), # (32, 16, 16)
+        #     nn.BatchNorm2d(64),
+        #     nn.LeakyReLU(0.2, True),
+        #     nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1, bias=False), # (32, 32, 32)
+        #     nn.BatchNorm2d(32),
+        #     nn.LeakyReLU(0.2, True),
+        #     nn.ConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1, bias=False), # (32, 64, 64)
+        #     nn.BatchNorm2d(16),
+        #     nn.LeakyReLU(0.2, True),
+        #     nn.ConvTranspose2d(16, 8, kernel_size=4, stride=2, padding=1, bias=False), # (32, 128, 128)
+        #     nn.BatchNorm2d(8),
+        #     nn.LeakyReLU(0.2, True),
+        #     # nn.ConvTranspose2d(8, img_channel, kernel_size=4, stride=2, padding=1, bias=True), # (32, 256, 256)
+        # )
+
+        # self.conv_last = nn.ConvTranspose2d(8, img_channel, kernel_size=4, stride=2, padding=1, bias=True) # (32, 256, 256)
+        # self.conv_last.weight.data.fill_(0.0)
+        # self.conv_last.bias.data.fill_(0.0)
+
+        # self.decoder = nn.Sequential(
+        #     nn.Linear(z_dim+w_dim, hid_dim),
+        #     nn.LeakyReLU(0.2, True),
+        #     nn.Linear(hid_dim, 64*8*8),
+        #     nn.LeakyReLU(0.2, True),
+        #     View((-1, 64, 8, 8)),
+        #     ResBlockUpsample(64, 32, bn=True), # 8
+        #     ResBlockUpsample(32, 16, bn=True), # 16
+        #     ResBlockUpsample(16, 8, bn=True), # 64
+        #     ResBlockUpsample(8, 4, bn=True), # 128
+        #     ResBlockUpsample(4, 2, bn=True), # 256
+        #     nn.Conv2d(2, 1, kernel_size=3, stride=1, padding=1, bias=True)
+        # )
+
         self.decoder = nn.Sequential(
             nn.Linear(z_dim+w_dim, hid_dim),
             nn.LeakyReLU(0.2, True),
-            nn.Linear(hid_dim, 256*8*8),
+            nn.Linear(hid_dim, 64*8*8),
             nn.LeakyReLU(0.2, True),
-            View((-1, 256, 8, 8)),
-            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1, bias=False), # (32, 16, 16)
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.2, True),
-            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1, bias=False), # (32, 32, 32)
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.2, True),
-            nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1, bias=False), # (32, 64, 64)
-            nn.BatchNorm2d(32),
-            nn.LeakyReLU(0.2, True),
-            nn.ConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1, bias=True), # (32, 128, 128)
-            nn.LeakyReLU(0.2, True),
-            nn.ConvTranspose2d(16, img_channel, kernel_size=4, stride=2, padding=1, bias=True), # (32, 256, 256)
+            View((-1, 64, 8, 8)),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            DoubleConv(64, 64),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            DoubleConv(64, 32),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            DoubleConv(32, 32),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            DoubleConv(32, 16),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            DoubleConv(16, 16),
+            OutConv(16, img_channel)
         )
 
     def forward(self, z, w):
@@ -386,4 +459,50 @@ class ResidualConv(nn.Module):
         out = self.net(x)
         res = self.rnet(x)
         out = self.lrelu(res + out)
+        return out
+
+class ResBlockDownsample(nn.Module):
+    def __init__(self, in_channels, out_channels, bn):
+        super(ResBlockDownsample, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1, bias=not bn)
+        self.conv_shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, bias=not bn)
+        self.down_shortcut = nn.MaxPool2d(3, stride=2, padding=1)
+        self.bn = bn
+        if bn:
+            self.bn1 = nn.BatchNorm2d(out_channels)
+            self.bn2 = nn.BatchNorm2d(out_channels)
+        self.relu = nn.LeakyReLU(0.2, inplace=True)
+        
+    def forward(self, x):
+        out = self.conv1(x)
+        shortcut = self.conv_shortcut(x)
+        shortcut = self.down_shortcut(shortcut)
+        if self.bn:
+            out = self.bn1(out)
+            shortcut = self.bn2(shortcut)
+        out += shortcut
+        out = self.relu(out)
+        return out
+
+class ResBlockUpsample(nn.Module):
+    def __init__(self, in_channels, out_channels, bn):
+        super(ResBlockUpsample, self).__init__()
+        self.bn = bn
+        self.conv1 = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1, output_padding=1, bias=not bn)
+        self.relu = nn.LeakyReLU(0.2, inplace=True)
+        self.conv_shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, bias=not bn)
+        self.up_shortcut = nn.Upsample(scale_factor=2, mode='nearest')
+        if bn:
+            self.bn1 = nn.BatchNorm2d(out_channels)
+            self.bn2 = nn.BatchNorm2d(out_channels)
+        
+    def forward(self, x):
+        out = self.conv1(x)
+        shortcut = self.conv_shortcut(x)
+        shortcut = self.up_shortcut(shortcut)
+        if self.bn:
+            out = self.bn1(out)
+            shortcut = self.bn2(shortcut)
+        out += shortcut
+        out = self.relu(out)
         return out

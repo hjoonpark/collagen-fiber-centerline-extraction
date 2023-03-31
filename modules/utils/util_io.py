@@ -25,6 +25,7 @@ def load_parameters(param_path, copy_to_dir):
     fname = os.path.basename(param_path)
 
     # keep a record of the parameters for future reference
-    copy_to_path = os.path.join(copy_to_dir, fname)
-    json.dump(params, open(copy_to_path, "w+"), indent=4)
+    if copy_to_dir is not None:
+        copy_to_path = os.path.join(copy_to_dir, fname)
+        json.dump(params, open(copy_to_path, "w+"), indent=4)
     return params

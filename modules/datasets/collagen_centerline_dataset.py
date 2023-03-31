@@ -7,11 +7,11 @@ import torchvision.transforms as transforms
 from skimage import img_as_float, io, img_as_bool
 import torchvision.transforms as tf
 
-class CollagenCenterlineDataset(torch.utils.data.Dataset):
-    def __init__(self, data_dir, stage, rand_augment, logger):
+class CollagenDataset(torch.utils.data.Dataset):
+    def __init__(self, rank, data_dir, stage, rand_augment):
         self.stage = stage
         to_tensor = transforms.ToTensor()
-        N = -1
+        N = 1
 
         self.filenames = []
         if stage == 1:
@@ -37,16 +37,13 @@ class CollagenCenterlineDataset(torch.utils.data.Dataset):
                 self.filenames.append(filename)
 
                 if (i-1) % 1000 == 0:
-                    print(f"(Stage {stage}) loaded data [{i+1}/{len(centerline_paths)}]")
+                    print(f"(Stage {stage}) loaded data [{i+1}/{len(centerline_paths)}] [rank {rank}] ")
                 if i == N:
                     break
 
             self.centerlines = torch.cat(self.centerlines, dim=0).float()[:, None, :, :]
             self.properties = torch.cat(self.properties, dim=0).float()
             self.y_mins, self.y_maxs = self.properties.min(dim=0).values, self.properties.max(dim=0).values
-            
-            logger.print("Loaded centerlines={}, {} min/max=({:.2f}, {:.2f}), mean/std=({:.2f}, {:.2f})".format(self.centerlines.shape, self.centerlines.dtype, self.centerlines.min(), self.centerlines.max(), self.centerlines.mean(), self.centerlines.std()))
-            logger.print("Loaded properties ={}, {} min/max=({:.2f}, {:.2f}), mean/std=({:.2f}, {:.2f})".format(self.properties.shape, self.properties.dtype, self.properties.min(), self.properties.max(), self.properties.mean(), self.properties.std()))
 
         elif stage == 2 or stage == 3:
             # (Stage 2) collagen images, collagen centerlines
@@ -70,15 +67,12 @@ class CollagenCenterlineDataset(torch.utils.data.Dataset):
                 self.filenames.append(filename)
 
                 if (i-1) % 100 == 0:
-                    print(f"(Stage {stage}) loaded data [{i+1}/{len(centerline_paths)}]")
+                    print(f"(Stage {stage}) loaded data [{i+1}/{len(centerline_paths)}] [rank {rank}]")
                 if i == N:
                     break
 
             self.images = torch.cat(self.images, dim=0).float()[:, None, :, :]
             self.centerlines = torch.cat(self.centerlines, dim=0).float()[:, None, :, :]
-            
-            logger.print("Loaded images     ={}, {} min/max=({:.2f}, {:.2f}), mean/std=({:.2f}, {:.2f})".format(self.images.shape, self.images.dtype, self.images.min(), self.images.max(), self.images.mean(), self.images.std()))
-            logger.print("Loaded centerlines={}, {} min/max=({:.2f}, {:.2f}), mean/std=({:.2f}, {:.2f})".format(self.centerlines.shape, self.centerlines.dtype, self.centerlines.min(), self.centerlines.max(), self.centerlines.mean(), self.centerlines.std()))
 
             # random augmentations
             self.rand_augment = rand_augment

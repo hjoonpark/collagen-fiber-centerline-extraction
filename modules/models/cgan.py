@@ -9,10 +9,10 @@ from modules.utils.util_model import get_available_devices
 import functools
 
 class cGAN(nn.Module):
-    def __init__(self, params, is_train, logger, img_channel=1):
+    def __init__(self, params, is_train, img_channel=1, device='cpu'):
         super().__init__()
-        self.device, self.gpu_ids = get_available_devices(logger)
-
+        self.device = device
+        
         # define model
         self.G = UnetGenerator(input_nc=img_channel, output_nc=img_channel, num_downs=6, ngf=8, norm_layer=nn.BatchNorm2d, use_dropout=is_train).to(self.device)
 

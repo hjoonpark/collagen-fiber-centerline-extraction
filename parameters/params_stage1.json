@@ -2,21 +2,22 @@
     "data_dir": "data/36k",
     "train": {
         "n_epoch": 10000000,
-        "batch_size": 3500,
-        "lr": 0.0001,
-        "log_freq": 1,
-        "save_freq": 50
+        "batch_size": 8000,
+        "lr": 0.0005,
+        "log_freq": 2,
+        "save_freq": 200
     },
     "duovae": {
         "z_dim": 6,
         "w_dim": 6,
-        "x_recon_weight": 2.0,
+        "x_recon_weight": 1000.0,
         "y_recon_weight": 1.0,
         "beta_z": 0.01,
-        "beta_w": 1,
+        "beta_w": 0.1,
         "beta_w2": 0.01,
         "hid_channel": 64,
         "hid_dim_x": 1024,
-        "hid_dim_y": 32
+        "hid_dim_y": 32,
+        "loss_type": "focal"
     }
 }
