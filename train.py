@@ -38,7 +38,7 @@ def run(rank, world_size, args):
     if stage_num == 1:
         model_fname = "duovae.py"
         model = DuoVAE(params=params, is_train=True, device=device)
-
+        model = torch.compile(model)
     elif stage_num == 2:
         model_fname = "cgan.py"
         model = cGAN(params=params, is_train=True, device=device)

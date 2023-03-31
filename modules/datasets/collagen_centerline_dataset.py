@@ -2,7 +2,7 @@ import os, glob
 import numpy as np
 import torch
 from PIL import Image
-from skimage.morphology import skeletonize
+# from skimage.morphology import skeletonize
 import torchvision.transforms as transforms
 from skimage import img_as_float, io, img_as_bool
 import torchvision.transforms as tf
@@ -11,7 +11,7 @@ class CollagenDataset(torch.utils.data.Dataset):
     def __init__(self, rank, data_dir, stage, rand_augment):
         self.stage = stage
         to_tensor = transforms.ToTensor()
-        N = 1
+        N = -1
 
         self.filenames = []
         if stage == 1:
