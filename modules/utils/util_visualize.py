@@ -84,7 +84,7 @@ def save_losses(save_dir, losses, epoch):
     # save loss values as plot
     plt.figure(figsize=(10, 4))
     matplotlib.rc_file_defaults()
-    x_val = np.arange(1, epoch).astype(int)
+    x_val = np.arange(1, epoch+1).astype(int)
     for loss_name, loss_val in losses.items():
         plt.plot(x_val, loss_val, linewidth=1, label=loss_name)
     leg = plt.legend(loc='upper left')

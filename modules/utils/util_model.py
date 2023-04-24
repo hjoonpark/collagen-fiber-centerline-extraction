@@ -73,13 +73,19 @@ def load_model(model, load_dir, world_size, logger):
         net = getattr(model, model_name)    
         try:
             state_dict = torch.load(load_path, map_location=str(model.device))
-            net.load_state_dict(state_dict)
+            net.load_state_dict(state_dict, strict=False)
             if logger is not None:
                 logger.print("loading model: {}".format(load_path))
                 logger.print("  model={} loaded succesfully!".format(model_name))
-        except:
+            else:
+                print("loading model: {}".format(load_path))
+                print("  model={} loaded succesfully!".format(model_name))
+
+        except Exception as e:
             if logger is not None:
-                logger.print("failed to load - architecture mismatch! Initializing new instead: {}".format(model_name), LogLevel.WARNING.name)
+                logger.print("failed to load {} - architecture mismatch! Initializing new instead: {}".format(load_path, model_name), LogLevel.WARNING.name)
+            else:
+                print("failed to load {} - architecture mismatch! Initializing new instead: {}".format(load_path, model_name), LogLevel.WARNING.name)
 
 def get_losses(model):
     losses = {}

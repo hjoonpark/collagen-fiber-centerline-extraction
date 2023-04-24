@@ -1,1 +1,1 @@
-clear; python train.py 2
+clear; python train.py 2 --world-size 2 --model-dir output/stage2/model1

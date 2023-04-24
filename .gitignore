@@ -1,6 +1,7 @@
 data/
 output/
 nohup.out
+0003420/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

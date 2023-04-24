@@ -14,7 +14,7 @@ class cGAN(nn.Module):
         self.device = device
         
         # define model
-        self.G = UnetGenerator(input_nc=img_channel, output_nc=img_channel, num_downs=6, ngf=8, norm_layer=nn.BatchNorm2d, use_dropout=is_train).to(self.device)
+        self.G = UnetGenerator(input_nc=img_channel, output_nc=img_channel, num_downs=6, ngf=32, norm_layer=nn.BatchNorm2d, use_dropout=is_train).to(self.device)
 
         if is_train:
             # parameters used for training
@@ -38,7 +38,7 @@ class cGAN(nn.Module):
             self.register_buffer('fake_label', torch.tensor(0.0))
 
             # losses
-            self.criterionGAN = nn.MSELoss()
+            self.criterionGAN = nn.BCEWithLogitsLoss()
             self.criterionRecon = nn.L1Loss()
 
             self.model_names = ['D', 'G']
@@ -107,35 +107,28 @@ class Discriminator(nn.Module):
     def __init__(self, img_channel):
         super().__init__()
         self.D = nn.Sequential(
-            nn.Conv2d(2*img_channel, 8, kernel_size=4, stride=2, padding=1, bias=True), # 128
+            nn.Conv2d(2*img_channel, 32, kernel_size=4, stride=2, padding=1, bias=True), # 128
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(8, 16, kernel_size=4, stride=2, padding=1, bias=False), # 64
-            # nn.BatchNorm2d(32),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1, bias=False), # 64
+            nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(16, 32, kernel_size=4, stride=2, padding=1, bias=False), # 32
-            # nn.BatchNorm2d(64),
+            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1, bias=False), # 32
+            nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1, bias=False), # 16
-            # nn.BatchNorm2d(128),
+            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1, bias=False), # 16
+            nn.BatchNorm2d(256),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1, bias=False), # 8
-            # nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.2, inplace=True),
-            # nn.AdaptiveAvgPool2d((4, 4)),
-            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1, bias=False), # 4
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(256, 256, kernel_size=4, stride=2, padding=1, bias=False), # 2
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(256, img_channel, kernel_size=3, stride=1, padding=1, bias=True)
+            nn.Conv2d(256, 1, kernel_size=4, stride=1, padding=1, bias=True)
         )
 
     def forward(self, I):
         pred = self.D(I)
         return pred
-        
+
+
 class UnetGenerator(nn.Module):
-    # https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/models/networks.py
     """Create a Unet-based generator"""
+
     def __init__(self, input_nc, output_nc, num_downs, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False):
         """Construct a Unet generator
         Parameters:
@@ -151,19 +144,18 @@ class UnetGenerator(nn.Module):
         super(UnetGenerator, self).__init__()
         # construct unet structure
         unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True)  # add the innermost layer
-        for i in range(num_downs - 5): # add intermediate layers with ngf * 8 filters
+        for i in range(num_downs - 5):          # add intermediate layers with ngf * 8 filters
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
         # gradually reduce the number of filters from ngf * 8 to ngf
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
         unet_block = UnetSkipConnectionBlock(ngf * 2, ngf * 4, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
         self.model = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True, norm_layer=norm_layer)  # add the outermost layer
-        
 
     def forward(self, input):
         """Standard forward"""
-        output = self.model(input)
-        return output
+        return self.model(input)
+
 
 class UnetSkipConnectionBlock(nn.Module):
     """Defines the Unet submodule with skip connection.
@@ -171,7 +163,8 @@ class UnetSkipConnectionBlock(nn.Module):
         |-- downsampling -- |submodule| -- upsampling --|
     """
 
-    def __init__(self, outer_nc, inner_nc, input_nc=None, submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
+    def __init__(self, outer_nc, inner_nc, input_nc=None,
+                 submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
         """Construct a Unet submodule with skip connections.
         Parameters:
             outer_nc (int) -- the number of filters in the outer conv layer
@@ -191,31 +184,32 @@ class UnetSkipConnectionBlock(nn.Module):
             use_bias = norm_layer == nn.InstanceNorm2d
         if input_nc is None:
             input_nc = outer_nc
-        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
+        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
+                             stride=2, padding=1, bias=use_bias)
         downrelu = nn.LeakyReLU(0.2, True)
         downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
         upnorm = norm_layer(outer_nc)
 
         if outermost:
-            # upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc, kernel_size=4, stride=2, padding=1)
+            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+                                        kernel_size=4, stride=2,
+                                        padding=1)
             down = [downconv]
-            upconv = nn.Sequential(
-                nn.Conv2d(inner_nc * 2, inner_nc * 2, kernel_size=1),
-                nn.PReLU(),
-                nn.UpsamplingBilinear2d(scale_factor=2), 
-                nn.Conv2d(inner_nc * 2, outer_nc, kernel_size=3, stride=1, padding=1)
-                )
+            up = [uprelu, upconv, nn.Tanh()]
             # up = [uprelu, upconv]
-            up = [uprelu, upconv, nn.Sigmoid()]
             model = down + [submodule] + up
         elif innermost:
-            upconv = nn.ConvTranspose2d(inner_nc, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
+            upconv = nn.ConvTranspose2d(inner_nc, outer_nc,
+                                        kernel_size=4, stride=2,
+                                        padding=1, bias=use_bias)
             down = [downrelu, downconv]
             up = [uprelu, upconv, upnorm]
             model = down + up
         else:
-            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
+            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+                                        kernel_size=4, stride=2,
+                                        padding=1, bias=use_bias)
             down = [downrelu, downconv, downnorm]
             up = [uprelu, upconv, upnorm]
 
@@ -223,6 +217,7 @@ class UnetSkipConnectionBlock(nn.Module):
                 model = down + [submodule] + up + [nn.Dropout(0.5)]
             else:
                 model = down + [submodule] + up
+
         self.model = nn.Sequential(*model)
 
     def forward(self, x):

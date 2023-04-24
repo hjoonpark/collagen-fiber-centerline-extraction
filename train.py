@@ -33,15 +33,18 @@ def run(rank, world_size, args):
     # load user-defined parameters
     params = load_parameters(param_path=f"parameters/params_stage{stage_num}.json", copy_to_dir=os.path.join(dirs["log"]) if rank == 0 else None)
     batch_size = params["train"]["batch_size"]
+    data_dir = params["data_dir"]
 
     # load model
     if stage_num == 1:
         model_fname = "duovae.py"
         model = DuoVAE(params=params, is_train=True, device=device)
-        model = torch.compile(model)
+        # model = torch.compile(model)
+        model = torch.compile(model, mode="max-autotune")
     elif stage_num == 2:
         model_fname = "cgan.py"
         model = cGAN(params=params, is_train=True, device=device)
+        model = torch.compile(model, mode="max-autotune")
 
         if rank == 0:
             # test data
@@ -60,7 +63,6 @@ def run(rank, world_size, args):
         raise NotImplementedError(f"[{self.__class__.__name__ }] Stage number should be either 1, 2, or 3.")
 
     # load training dataset
-    data_dir = params["data_dir"]
     dataset_train = CollagenDataset(rank=rank, data_dir=os.path.join(data_dir, "train"), stage=stage_num, rand_augment=(stage_num != 1))
     dataloader_train = torch.utils.data.DataLoader(dataset_train, shuffle=True, batch_size=batch_size)
 
@@ -141,7 +143,7 @@ def run(rank, world_size, args):
             if iters > 1e10:
                 iters = 0
 
-        if rank != 0 or epoch == starting_epoch:
+        if rank != 0:
             continue
 
         # check gpu stat
@@ -155,7 +157,7 @@ def run(rank, world_size, args):
             losses_all[loss_name].append(loss_val)
 
         # log losses every some epochs
-        do_initial_checks = False #((epoch > 0 and epoch <= 50) and (epoch % 10 == 0))
+        do_initial_checks = epoch == 10 #((epoch > 0 and epoch <= 50) and (epoch % 10 == 0))
         if do_initial_checks or (epoch % params["train"]["log_freq"] == 0):
             loss_str = "epoch:{}/{} ".format(epoch, params["train"]["n_epoch"])
             for loss_name, loss_vals in losses_all.items():

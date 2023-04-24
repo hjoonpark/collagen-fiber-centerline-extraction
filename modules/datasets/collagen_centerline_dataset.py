@@ -2,7 +2,7 @@ import os, glob
 import numpy as np
 import torch
 from PIL import Image
-# from skimage.morphology import skeletonize
+from skimage.morphology import skeletonize
 import torchvision.transforms as transforms
 from skimage import img_as_float, io, img_as_bool
 import torchvision.transforms as tf
@@ -24,10 +24,14 @@ class CollagenDataset(torch.utils.data.Dataset):
                 filename = os.path.basename(cl_path).split(".")[0]
 
                 # paths
-                prop_path = os.path.join(data_dir, "properties", "{}.txt".format(filename))
+                prop_path = os.path.join(data_dir, "properties", "{:05d}.txt".format(int(filename)))
 
                 # load
-                centerline = to_tensor(np.load(cl_path))
+                if ".npy" in cl_path:
+                    centerline = to_tensor(np.load(cl_path))
+                else:
+                    centerline = to_tensor(Image.open(cl_path))
+
                 with open(prop_path, "r") as f:
                     lines = f.readlines()[0]
                     props = torch.from_numpy(np.array([float(v) for v in lines.split(" ")]))[None, :]
@@ -44,6 +48,9 @@ class CollagenDataset(torch.utils.data.Dataset):
             self.centerlines = torch.cat(self.centerlines, dim=0).float()[:, None, :, :]
             self.properties = torch.cat(self.properties, dim=0).float()
             self.y_mins, self.y_maxs = self.properties.min(dim=0).values, self.properties.max(dim=0).values
+
+            print("self.centerlines: {}, ({:.2f}, {:.2f})".format(self.centerlines.shape, self.centerlines.min(), self.centerlines.max()))
+            print("self.properties: {}, ({:.2f}, {:.2f})".format(self.properties.shape, self.properties.min(), self.properties.max()))
 
         elif stage == 2 or stage == 3:
             # (Stage 2) collagen images, collagen centerlines
