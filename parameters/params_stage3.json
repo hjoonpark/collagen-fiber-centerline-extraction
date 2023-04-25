@@ -1,11 +1,11 @@
 {
-    "data_dir": "data/final_train_test",
+    "data_dir": "data/base_1188",
     "train": {
-        "n_epoch": 20000,
-        "batch_size": 500,
-        "lr": 0.00001,
-        "log_freq": 10,
-        "save_freq": 500
+        "n_epoch": 200000,
+        "batch_size": 400,
+        "lr": 0.0001,
+        "log_freq": 1,
+        "save_freq": 100
     },
     "unet": {
         "loss_type": "focal",

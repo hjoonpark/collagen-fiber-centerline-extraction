@@ -6,9 +6,10 @@ from skimage.morphology import skeletonize
 import torchvision.transforms as transforms
 from skimage import img_as_float, io, img_as_bool
 import torchvision.transforms as tf
+import random
 
 class CollagenDataset(torch.utils.data.Dataset):
-    def __init__(self, rank, data_dir, stage, rand_augment):
+    def __init__(self, rank, data_dir, stage, rand_augment, n_synth_data=0):
         self.stage = stage
         to_tensor = transforms.ToTensor()
         N = -1
@@ -77,6 +78,29 @@ class CollagenDataset(torch.utils.data.Dataset):
                     print(f"(Stage {stage}) loaded data [{i+1}/{len(centerline_paths)}] [rank {rank}]")
                 if i == N:
                     break
+
+            if stage == 3 and n_synth_data > 0:
+                print("Loading synthetic data: {}".format(n_synth_data))
+                synth_dir = os.path.join("augmentation_script", "output", "augmentations")
+                centerline_paths = sorted(glob.glob(os.path.join(synth_dir, "stage1", "*")))
+
+                centerline_paths = random.sample(centerline_paths, n_synth_data)
+                for i, cl_path in enumerate(centerline_paths):
+                    filename = os.path.basename(cl_path)
+
+                    # paths
+                    img_path = os.path.join(synth_dir, "stage2", filename)
+
+                    # load
+                    image = to_tensor(Image.open(img_path))
+                    centerline = to_tensor(Image.open(cl_path))
+
+                    self.images.append(image)
+                    self.centerlines.append(centerline)
+                    self.filenames.append(filename)
+
+                    if (i-1) % 100 == 0:
+                        print(f"(Stage {stage}) loaded synthetic data [{i+1}/{len(centerline_paths)}] [rank {rank}]")
 
             self.images = torch.cat(self.images, dim=0).float()[:, None, :, :]
             self.centerlines = torch.cat(self.centerlines, dim=0).float()[:, None, :, :]

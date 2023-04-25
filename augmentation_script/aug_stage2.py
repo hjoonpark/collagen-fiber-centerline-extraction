@@ -41,11 +41,12 @@ def run(threa_idx, args):
     params2 = load_parameters(param_path=f"../parameters/params_stage2.json", copy_to_dir=None)
 
     # load models
-    device, gpu_ids = get_available_devices(0)
+    device = "cuda:{}".format(args.cuda_idx)
     model2 = cGAN(params=params2, is_train=False, device=device)
 
     load_model(model2, "../output/stage2/model1", world_size=1, logger=logger)
     model2.eval()
+    logger.print("Device: {}".format(device))
     
     model2 = model2.to(device)
     model2_module = model2
@@ -100,6 +101,7 @@ if __name__ == "__main__":
     parser.add_argument("--worker-idx", type=int, help="worker index", default=0)
     parser.add_argument("--start-idx", type=int, help="starting index", default=0)
     parser.add_argument("--end-idx", type=int, help="end index", default=0)
+    parser.add_argument("--cuda-idx", type=int, help="cuda index", default=0)
     args = parser.parse_args()
 
     run(args.worker_idx, args)

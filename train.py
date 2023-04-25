@@ -54,6 +54,7 @@ def run(rank, world_size, args):
     elif stage_num == 3:
         model_fname = "unet.py"
         model = UNet(params=params, is_train=True, device=device)
+        model = torch.compile(model, mode="max-autotune")
 
         if rank == 0:
             # test data
@@ -63,7 +64,8 @@ def run(rank, world_size, args):
         raise NotImplementedError(f"[{self.__class__.__name__ }] Stage number should be either 1, 2, or 3.")
 
     # load training dataset
-    dataset_train = CollagenDataset(rank=rank, data_dir=os.path.join(data_dir, "train"), stage=stage_num, rand_augment=(stage_num != 1))
+    n_synth_data = 0 if stage_num != 3 else 4752
+    dataset_train = CollagenDataset(rank=rank, data_dir=os.path.join(data_dir, "train"), stage=stage_num, rand_augment=(stage_num != 1), n_synth_data=n_synth_data)
     dataloader_train = torch.utils.data.DataLoader(dataset_train, shuffle=True, batch_size=batch_size)
 
     if rank == 0:

@@ -21,9 +21,9 @@ class UNet(nn.Module):
             lr = params["train"]["lr"]
             loss_type = params["unet"]["loss_type"]
             if loss_type == 'focal':
-                self.criterion = BinaryFocalLoss(0.75, 2, pos_weight=torch.tensor([10]).float().cuda(), is_logits=False)
+                self.criterion = BinaryFocalLoss(0.75, 2, pos_weight=torch.tensor([10]).float().to(device), is_logits=False)
             elif loss_type == 'BCE': 
-                self.criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([10]).float().cuda())
+                self.criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([10]).float().to(device))
             elif loss_type == 'L1':
                 self.criterion = nn.L1Loss()
             else:
