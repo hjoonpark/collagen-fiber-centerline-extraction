@@ -1,0 +1,25 @@
+clear;
+nohup python aug_stage2.py --worker-idx 0 --start-idx 0 --end-idx 50 --cuda-idx 0 &
+nohup python aug_stage2.py --worker-idx 1 --start-idx 50 --end-idx 100 --cuda-idx 0 &
+nohup python aug_stage2.py --worker-idx 2 --start-idx 100 --end-idx 150 --cuda-idx 0 &
+nohup python aug_stage2.py --worker-idx 3 --start-idx 150 --end-idx 200 --cuda-idx 0 &
+nohup python aug_stage2.py --worker-idx 4 --start-idx 200 --end-idx 250 --cuda-idx 0 &
+nohup python aug_stage2.py --worker-idx 5 --start-idx 250 --end-idx 300 --cuda-idx 0 &
+nohup python aug_stage2.py --worker-idx 6 --start-idx 300 --end-idx 350 --cuda-idx 0 &
+nohup python aug_stage2.py --worker-idx 7 --start-idx 350 --end-idx 400 --cuda-idx 0 &
+nohup python aug_stage2.py --worker-idx 8 --start-idx 400 --end-idx 450 --cuda-idx 0 &
+nohup python aug_stage2.py --worker-idx 9 --start-idx 450 --end-idx 500 --cuda-idx 0 &
+nohup python aug_stage2.py --worker-idx 10 --start-idx 500 --end-idx 550 --cuda-idx 0 &
+nohup python aug_stage2.py --worker-idx 11 --start-idx 550 --end-idx 600 --cuda-idx 0 &
+nohup python aug_stage2.py --worker-idx 12 --start-idx 600 --end-idx 650 --cuda-idx 1 &
+nohup python aug_stage2.py --worker-idx 13 --start-idx 650 --end-idx 700 --cuda-idx 1 &
+nohup python aug_stage2.py --worker-idx 14 --start-idx 700 --end-idx 750 --cuda-idx 1 &
+nohup python aug_stage2.py --worker-idx 15 --start-idx 750 --end-idx 800 --cuda-idx 1 &
+nohup python aug_stage2.py --worker-idx 16 --start-idx 800 --end-idx 850 --cuda-idx 1 &
+nohup python aug_stage2.py --worker-idx 17 --start-idx 850 --end-idx 900 --cuda-idx 1 &
+nohup python aug_stage2.py --worker-idx 18 --start-idx 900 --end-idx 950 --cuda-idx 1 &
+nohup python aug_stage2.py --worker-idx 19 --start-idx 950 --end-idx 1000 --cuda-idx 1 &
+nohup python aug_stage2.py --worker-idx 20 --start-idx 1000 --end-idx 1050 --cuda-idx 1 &
+nohup python aug_stage2.py --worker-idx 21 --start-idx 1050 --end-idx 1100 --cuda-idx 1 &
+nohup python aug_stage2.py --worker-idx 22 --start-idx 1100 --end-idx 1150 --cuda-idx 1 &
+nohup python aug_stage2.py --worker-idx 23 --start-idx 1150 --end-idx 1200 --cuda-idx 1 &

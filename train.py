@@ -64,7 +64,7 @@ def run(rank, world_size, args):
         raise NotImplementedError(f"[{self.__class__.__name__ }] Stage number should be either 1, 2, or 3.")
 
     # load training dataset
-    n_synth_data = 0 if stage_num != 3 else 4752
+    n_synth_data = 0 if stage_num != 3 else params["train"]["n_synth_data"]
     dataset_train = CollagenDataset(rank=rank, data_dir=os.path.join(data_dir, "train"), stage=stage_num, rand_augment=(stage_num != 1), n_synth_data=n_synth_data)
     dataloader_train = torch.utils.data.DataLoader(dataset_train, shuffle=True, batch_size=batch_size)
 

@@ -82,25 +82,28 @@ class CollagenDataset(torch.utils.data.Dataset):
             if stage == 3 and n_synth_data > 0:
                 print("Loading synthetic data: {}".format(n_synth_data))
                 synth_dir = os.path.join("augmentation_script", "output", "augmentations")
-                centerline_paths = sorted(glob.glob(os.path.join(synth_dir, "stage1", "*")))
 
-                centerline_paths = random.sample(centerline_paths, n_synth_data)
-                for i, cl_path in enumerate(centerline_paths):
-                    filename = os.path.basename(cl_path)
+                for aug_type in ["z", "y"]:
+                    centerline_paths = sorted(glob.glob(os.path.join(synth_dir, "stage1", f"*{aug_type}*")))
 
-                    # paths
-                    img_path = os.path.join(synth_dir, "stage2", filename)
+                    centerline_paths = random.sample(centerline_paths, n_synth_data // 2)
 
-                    # load
-                    image = to_tensor(Image.open(img_path))
-                    centerline = to_tensor(Image.open(cl_path))
+                    for i, cl_path in enumerate(centerline_paths):
+                        filename = os.path.basename(cl_path)
 
-                    self.images.append(image)
-                    self.centerlines.append(centerline)
-                    self.filenames.append(filename)
+                        # paths
+                        img_path = os.path.join(synth_dir, "stage2", filename)
 
-                    if (i-1) % 100 == 0:
-                        print(f"(Stage {stage}) loaded synthetic data [{i+1}/{len(centerline_paths)}] [rank {rank}]")
+                        # load
+                        image = to_tensor(Image.open(img_path))
+                        centerline = to_tensor(Image.open(cl_path))
+
+                        self.images.append(image)
+                        self.centerlines.append(centerline)
+                        self.filenames.append(filename)
+
+                        if (i-1) % 100 == 0:
+                            print(f"(Stage {stage}) loaded {aug_type} synthetic data [{i+1}/{len(centerline_paths)}] [rank {rank}]")
 
             self.images = torch.cat(self.images, dim=0).float()[:, None, :, :]
             self.centerlines = torch.cat(self.centerlines, dim=0).float()[:, None, :, :]

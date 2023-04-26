@@ -33,9 +33,6 @@ class UNet(nn.Module):
 
             self.optimizer = torch.optim.Adam(unet_params, lr=lr, amsgrad=True)
 
-            self.register_buffer('real_label', torch.tensor(1.0).to(self.device))
-            self.register_buffer('fake_label', torch.tensor(0.0).to(self.device))
-
             self.model_names = ['unet']
 
         self.loss_recon = 0

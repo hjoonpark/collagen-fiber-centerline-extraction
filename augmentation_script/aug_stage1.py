@@ -1,4 +1,5 @@
 import os, sys, json, shutil, glob
+sys.path.insert(0, "..") 
 
 from modules.datasets.collagen_centerline_dataset import CollagenDataset
 from modules.models import DuoVAE, cGAN, UNet
@@ -30,9 +31,10 @@ def bin_by_frequency(properties, n_bin_intervals=10):
         res = list(res.categories.values)
 
         ys = []
-        for r in res:
+        for i, r in enumerate(res):
             center = (r.left+r.right)*0.5
             ys.append(center)
+
         ys = np.float32(ys)
         y_vals.append(ys)
 
@@ -41,6 +43,7 @@ def bin_by_frequency(properties, n_bin_intervals=10):
 def run(rank, world_size, args):
 
     out_dir = "output/augmentations"
+    os.makedirs(out_dir, exist_ok=1)
 
     # init helper class
     logger = Logger(save_path=os.path.join(out_dir, "log.txt"), muted=False)
@@ -54,8 +57,8 @@ def run(rank, world_size, args):
     model1 = DuoVAE(params=params1, is_train=False, device=device)
     model2 = cGAN(params=params2, is_train=False, device=device)
 
-    load_model(model1, "output/stage1/model4", world_size=1, logger=logger)
-    load_model(model2, "output/stage2/model1", world_size=1, logger=logger)
+    load_model(model1, "../output/stage1/model4", world_size=1, logger=logger)
+    load_model(model2, "../output/stage2/model1", world_size=1, logger=logger)
     model1.eval()
     model2.eval()
     
@@ -66,7 +69,7 @@ def run(rank, world_size, args):
     model2 = model2.to(device)
     model2_module = model2
 
-    n_y_samples = 7
+    n_y_samples = 5
     y_traverse_points = bin_by_frequency(dataset_train.properties, n_bin_intervals=n_y_samples) # (y_dim, n_traverse_samples)
 
     single_dir = os.path.join(out_dir, "single")
@@ -80,7 +83,7 @@ def run(rank, world_size, args):
     
     # y-aug
     with torch.no_grad():
-        for data in dataloader_train:
+        for data_idx, data in enumerate(dataloader_train):
             fname = int(data["filename"][0])
 
             model1.set_input(data)
@@ -126,20 +129,23 @@ def run(rank, world_size, args):
 
                     centerline_recons = as_np(centerline_recon) if centerline_recons is None else np.concatenate((centerline_recons, vdivider, as_np(centerline_recon)), axis=-1)
 
-                if collagen_imgs is not None:
-                    row = np.concatenate((centerline_recons, hdivider, collagen_imgs), axis=2)
-                    recons_all = row if recons_all is None else np.concatenate((recons_all, hdivider_thick, row), axis=2)
-                else:
-                    row = centerline_recons
-                    recons_all = row if recons_all is None else np.concatenate((recons_all, hdivider, row), axis=2)
+                if data_idx % 100 == 0:
+                    if collagen_imgs is not None:
+                        row = np.concatenate((centerline_recons, hdivider, collagen_imgs), axis=2)
+                        recons_all = row if recons_all is None else np.concatenate((recons_all, hdivider_thick, row), axis=2)
+                    else:
+                        row = centerline_recons
+                        recons_all = row if recons_all is None else np.concatenate((recons_all, hdivider, row), axis=2)
 
-            # save stacked
-            recons_all = np.transpose(recons_all, (0, 2, 3, 1))
-            save_path = save_image(recons_all.squeeze(), os.path.join(stacked_dir, "y_trav_{:05d}.png".format(fname)))
+            if data_idx % 100 == 0:
+                # save stacked
+                recons_all = np.transpose(recons_all, (0, 2, 3, 1))
+                save_path = save_image(recons_all.squeeze(), os.path.join(stacked_dir, "y_trav_{:05d}.png".format(fname)))
+                logger.print("saved stacked: {}".format(save_path))
     logger.print("y DONE")
             
     # z-aug
-    n_z_samples = 3
+    n_z_samples = 5
     P = None
     with torch.no_grad():
         for data in dataloader_train:

@@ -2,10 +2,11 @@
     "data_dir": "data/base_1188",
     "train": {
         "n_epoch": 200000,
-        "batch_size": 400,
-        "lr": 0.0001,
+        "batch_size": 380,
+        "lr": 0.001,
         "log_freq": 1,
-        "save_freq": 100
+        "save_freq": 50,
+        "n_synth_data": 10692
     },
     "unet": {
         "loss_type": "focal",
