@@ -22,7 +22,7 @@ from PIL import Image
 class CenterLine():
     def __init__(self, centerline_image=None, line_dict=None, dataframe=None, associate_image=None, image_size=None):
         self.centerline_image = img_as_float(centerline_image) if centerline_image is not None else None
-        self.associate_image = img_as_float(associate_image.cpu().numpy().squeeze()) if associate_image is not None else None
+        self.associate_image = img_as_float(associate_image.squeeze()) if associate_image is not None else None
         self.line_dict = line_dict # line_dict will always be created at initialization, line_dict > dataframe > centerlin_image
         self.linked_line_dict = None
         self.Point = namedtuple('Point', 'x y')
