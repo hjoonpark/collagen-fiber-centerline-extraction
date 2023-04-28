@@ -54,7 +54,7 @@ def run(rank, world_size, args):
     elif stage_num == 3:
         model_fname = "unet.py"
         model = UNet(params=params, is_train=True, device=device)
-        model = torch.compile(model, mode="max-autotune")
+        # model = torch.compile(model, mode="max-autotune")
 
         if rank == 0:
             # test data
