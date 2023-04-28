@@ -17,7 +17,7 @@ def run(args):
     model_dir = args.model_dir
 
     # make output directories
-    out_dir = os.path.join(model_dir, "..", "test", "stage3")
+    out_dir = os.path.join(model_dir, "..", "test")
     os.makedirs(out_dir, exist_ok=True)
 
     dirs = make_directories(root_dir=out_dir, sub_dirs=["raw"])
