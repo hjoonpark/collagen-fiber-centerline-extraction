@@ -97,7 +97,7 @@ class CollagenDataset(torch.utils.data.Dataset):
                         # load
                         image = to_tensor(Image.open(img_path))
                         centerline = to_tensor(Image.open(cl_path))
-
+                        
                         self.images.append(image)
                         self.centerlines.append(centerline)
                         self.filenames.append(filename)

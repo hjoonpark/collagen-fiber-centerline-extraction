@@ -37,7 +37,7 @@ class DuoVAE(nn.Module):
             self.y_recon_weight = params["duovae"]["y_recon_weight"]
             self.beta_z = params["duovae"]["beta_z"]
             self.beta_w = params["duovae"]["beta_w"]
-            self.beta_w2 = params["duovae"]["beta_w2"]
+            self.beta_ww = params["duovae"]["beta_ww"]
 
             # optimizers
             params_x = itertools.chain(self.encoder_x.parameters(), self.decoder_x.parameters(), self.decoder_y.parameters())
@@ -127,7 +127,7 @@ class DuoVAE(nn.Module):
         self.loss_kl_div_w = self.kl_divergence(Qw, Pw).div(batch_size)
 
         loss = self.x_recon_weight*self.loss_x_recon + self.y_recon_weight*self.loss_y_recon \
-                + self.beta_z*self.loss_kl_div_z + self.beta_w*self.loss_kl_div_w
+                + self.beta_z*self.loss_kl_div_z + self.beta_ww*self.loss_kl_div_w
         loss.backward()
 
     def forward_backward_y(self):
@@ -143,7 +143,7 @@ class DuoVAE(nn.Module):
         Pw = dist.Normal(torch.zeros_like(self.w2), torch.ones_like(self.w2))
         self.loss_kl_div_w2 = self.kl_divergence(Qw2, Pw).div(batch_size)
 
-        loss = self.y_recon_weight*self.loss_y_recon2 + self.beta_w2*self.loss_kl_div_w2
+        loss = self.y_recon_weight*self.loss_y_recon2 + self.beta_w*self.loss_kl_div_w2
         loss.backward()
 
     def traverse_y(self, x, y, y_mins, y_maxs, n_samples):
@@ -200,12 +200,12 @@ class EncoderX(nn.Module):
         
         # flat_dim = np.product((hid_channel, 16, 16))
         self.encoder = nn.Sequential(
-            ResidualConv(img_channel, 16, sampling="down"), # 128
-            ResidualConv(16, 16, sampling="down"), # 64
-            ResidualConv(16, 16, sampling="down"), # 32
-            ResidualConv(16, 16, sampling="down"), # 32
-            View((-1, 16*16*16)),
-            ResidualLinear(16*16*16, 512),
+            ResidualConv(img_channel, 32, sampling="down"), # 128
+            ResidualConv(32, 32, sampling="down"), # 64
+            ResidualConv(32, 32, sampling="down"), # 32
+            ResidualConv(32, 32, sampling="down"), # 32
+            View((-1, 32*16*16)),
+            ResidualLinear(32*16*16, 512),
             ResidualLinear(512, 2*(z_dim + w_dim)),
         )
 
@@ -291,13 +291,13 @@ class DecoderX(nn.Module):
         # nn.ConvTranspose2d(32, 32, kernel_size=7, stride=2, padding=3, output_padding=1, dilation=1, bias=False), # (32, 128, 128)
         self.decoder = nn.Sequential(
             ResidualLinear(z_dim + w_dim, 512),
-            ResidualLinear(512, 16*16*16),
-            View((-1, 16, 16, 16)),
-            ResidualConv(16, 16, sampling="up"),
-            ResidualConv(16, 16, sampling="up"),
-            ResidualConv(16, 16, sampling="up"),
-            ResidualConv(16, 16, sampling="up"),
-            nn.Conv2d(16, 1, kernel_size=3, stride=1, padding=1, bias=True), # (32, 256, 256)
+            ResidualLinear(512, 32*16*16),
+            View((-1, 32, 16, 16)),
+            ResidualConv(32, 32, sampling="up"),
+            ResidualConv(32, 32, sampling="up"),
+            ResidualConv(32, 32, sampling="up"),
+            ResidualConv(32, 32, sampling="up"),
+            nn.Conv2d(32, 1, kernel_size=3, stride=1, padding=1, bias=True), # (32, 256, 256)
         )
 
         # self.conv_last = nn.ConvTranspose2d(8, img_channel, kernel_size=4, stride=2, padding=1, bias=True) # (32, 256, 256)

@@ -6,7 +6,7 @@
         "lr": 0.001,
         "log_freq": 1,
         "save_freq": 100,
-        "n_synth_data": 1188
+        "n_synth_data": 10692
     },
     "unet": {
         "loss_type": "focal",
