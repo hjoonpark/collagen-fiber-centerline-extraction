@@ -2,8 +2,8 @@
     "data_dir": "data/36k",
     "train": {
         "n_epoch": 500000000,
-        "batch_size": 450,
-        "lr": 0.0001,
+        "batch_size": 300,
+        "lr": 0.00012,
         "log_freq": 1,
         "save_freq": 100
     },
@@ -12,8 +12,8 @@
         "w_dim": 6,
         "x_recon_weight": 40,
         "y_recon_weight": 1.0,
-        "beta_z": 0.04,
-        "beta_w": 0.04,
+        "beta_z": 0.05,
+        "beta_w": 0.05,
         "beta_ww": 1,
         "loss_type": "bce"
     }
