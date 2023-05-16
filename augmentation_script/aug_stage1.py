@@ -57,7 +57,8 @@ def run(rank, world_size, args):
     model1 = DuoVAE(params=params1, is_train=False, device=device)
     model2 = cGAN(params=params2, is_train=False, device=device)
 
-    load_model(model1, "../output/stage1/model4", world_size=1, logger=logger)
+    # load_model(model1, "../output/stage1/model4", world_size=1, logger=logger)
+    load_model(model1, "../output/stage1_32hiddim_BEST/model9", world_size=1, logger=logger)
     load_model(model2, "../output/stage2/model1", world_size=1, logger=logger)
     model1.eval()
     model2.eval()

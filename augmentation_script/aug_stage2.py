@@ -52,15 +52,16 @@ def run(threa_idx, args):
     model2_module = model2
 
     single_dir = os.path.join(out_dir, "single")
-
-    x_paths_all = glob.glob(os.path.join(single_dir, "*.png"))
+    x_paths_all = sorted(glob.glob(os.path.join(single_dir, "*.png")))
     x_paths = []
-    for x_path in x_paths_all:
+    for _, x_path in enumerate(x_paths_all):
         data_idx = int(os.path.basename(x_path).split("_")[0])
         if args.start_idx <= data_idx and data_idx < args.end_idx:
             x_paths.append(x_path)
     x_paths = sorted(x_paths)
     logger.print("processing {} data. Index [{}, {})".format(len(x_paths), args.start_idx, args.end_idx))
+    logger.print("first: {}".format(x_paths[0]))
+    logger.print("last: {}".format(x_paths[-1]))
 
     to_tensor = torchvision.transforms.Compose([
         torchvision.transforms.PILToTensor()
@@ -91,7 +92,7 @@ def run(threa_idx, args):
 
         logger.print("saved: {}".format(save_path))
 
-    logger.print("stage2 DONE")
+    logger.print("##### stage2 DONE #####")
 
 
 if __name__ == "__main__":

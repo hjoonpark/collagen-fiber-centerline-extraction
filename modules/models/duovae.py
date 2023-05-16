@@ -51,7 +51,7 @@ class DuoVAE(nn.Module):
                 pos_weight = torch.tensor([10]).float().to(self.device)
                 self.criterion = BinaryFocalLoss(0.75, 2, pos_weight=pos_weight, is_logits=False)
             elif loss_type == "bce":
-                pos_weight = torch.tensor([3]).float()
+                pos_weight = torch.tensor([2]).float()
                 self.criterion = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight, reduction='sum')
 
             # used by util.model to plot losses
