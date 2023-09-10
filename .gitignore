@@ -3,6 +3,7 @@ output/
 nohup.out
 0003420/
 forward_trainset/
+archive/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
